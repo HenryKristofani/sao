@@ -12,7 +12,7 @@
             <div class="card text-bg-primary shadow">
                 <div class="card-body text-center">
                     <i class="fa-solid fa-shopping-cart fa-3x"></i>
-                    <h4 class="mt-2">PO Jual</h4>
+                    <a href="{{ route('po-jual.index') }}" class="btn btn-primary">PO Jual</a>
                     <p class="mb-0">10 Pesanan</p>
                 </div>
             </div>
