@@ -9,10 +9,7 @@
     <form action="{{ route('po-jual.store') }}" method="POST">
         @csrf
 
-        <div class="mb-3">
-    <label for="nomor_po" class="form-label">Nomor PO</label>
-    <input type="text" name="nomor_po" class="form-control" value="{{ $nomor_po }}" readonly required>
-</div>
+
 
 
         <div class="mb-3">

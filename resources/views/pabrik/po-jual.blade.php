@@ -62,7 +62,13 @@
             {{-- Final PO (Approved, Amended, Canceled) --}}
             @foreach ($poList as $po)
                 <tr>
-                    <td>{{ $po->nomor_po }}</td>
+                    <td>
+                        @if($po->nomor_po)
+                            {{ $po->nomor_po }}
+                        @else
+                            -
+                        @endif
+                    </td>
                     <td>{{ $po->customer }}</td>
                     <td>Rp{{ number_format($po->total_harga, 0, ',', '.') }}</td>
                     <td>

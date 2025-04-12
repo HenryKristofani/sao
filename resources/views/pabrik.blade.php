@@ -50,6 +50,17 @@
                 </div>
             </div>
         </div>
+
+        <!-- Rekap Penjualan -->
+        <div class="col-md-3">
+            <div class="card text-bg-warning shadow">
+                <div class="card-body text-center">
+                    <i class="fa-solid fa-box fa-3x"></i>
+                    <h4 class="mt-2">Rekap Penjualan</h4>
+                    <p class="mb-0">Lihat rekapan per bulan</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

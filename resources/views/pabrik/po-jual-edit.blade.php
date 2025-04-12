@@ -9,10 +9,11 @@
     <form action="{{ route('po-jual.update', $po->id) }}" method="POST">
         @csrf
 
-        <div class="mb-3">
-            <label for="nomor_po" class="form-label">Nomor PO</label>
-            <input type="text" name="nomor_po" class="form-control" value="{{ $po->nomor_po }}" required>
-        </div>
+        <div class="form-group">
+    <label>Nomor PO</label>
+    <p class="form-control-plaintext">{{ $po->nomor_po ?? '-' }}</p>
+</div>
+
 
         <div class="mb-3">
             <label for="customer" class="form-label">Customer</label>
