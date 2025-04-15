@@ -1,69 +1,78 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Pabrik')
-
 @section('content')
-<div class="container">
-    <h1 class="text-center mb-4">Dashboard Pabrik</h1>
+<style>
+    .sidebar {
+        width: 230px;
+        background-color: #f5f5f5;
+        min-height: calc(100vh - 60px);
+        border-right: 1px solid #e0e0e0;
+        transition: margin-left 0.3s ease;
+    }
 
-    <div class="row">
-        <!-- PO Jual -->
-        <div class="col-md-3">
-            <div class="card text-bg-primary shadow">
-                <div class="card-body text-center">
-                    <i class="fa-solid fa-shopping-cart fa-3x"></i>
-                    <a href="{{ route('po-jual.index') }}" class="btn btn-primary">PO Jual</a>
-                    <p class="mb-0">10 Pesanan</p>
-                </div>
-            </div>
-        </div>
+    .sidebar.hidden {
+        margin-left: -230px;
+    }
 
-        <!-- PO Beli -->
-        <div class="col-md-3">
-            <div class="card text-bg-success shadow">
-                <div class="card-body text-center">
-                    <i class="fa-solid fa-truck fa-3x"></i>
-                    <h4 class="mt-2">PO Beli</h4>
-                    <p class="mb-0">5 Pesanan</p>
-                </div>
-            </div>
-        </div>
+    .content {
+        flex: 1;
+        padding: 20px;
+        transition: margin-left 0.3s ease;
+    }
 
-        <!-- Scheduler -->
-        <div class="col-md-3">
-            <div class="card text-bg-warning shadow">
-                <div class="card-body text-center">
-                    <i class="fa-solid fa-calendar-check fa-3x"></i>
-                    <h4 class="mt-2">Scheduler</h4>
-                    <p class="mb-0">3 Jadwal</p>
-                </div>
-            </div>
-        </div>
+    .toggle-btn {
+        background-color: #f5f5f5;
+        border: none;
+        border-radius: 0 5px 5px 0;
+        padding: 10px;
+        position: fixed;
+        left: 230px;
+        top: 70px;
+        z-index: 1000;
+        cursor: pointer;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        transition: left 0.3s ease;
+    }
 
-        <!-- Inventory -->
-        <div class="col-md-3">
-            <div class="card text-bg-danger shadow">
-                <div class="card-body text-center">
-                    <i class="fa-solid fa-box fa-3x"></i>
-                    <h4 class="mt-2">Inventory</h4>
-                    <p class="mb-0">150 Item</p>
-                </div>
-            </div>
-        </div>
+    .toggle-btn.hidden {
+        left: 0;
+    }
+</style>
 
-        <!-- Rekap Penjualan -->
-        <div class="col-md-3">
-            <div class="card text-bg-warning shadow">
-                <div class="card-body text-center">
-                    <i class="fa-solid fa-box fa-3x"></i>
-                    <h4 class="mt-2">Rekap Penjualan</h4>
-                    <p class="mb-0">Lihat rekapan per bulan</p>
-                </div>
+<div style="display: flex; width: 100%; margin-top: 60px; min-height: calc(100vh - 60px);">
+    <!-- Sidebar -->
+    @include('layouts.SidebarPabrik')    
+
+    <!-- Main Content -->
+    <div id="content" class="content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <div>
+                <h1>Welcome!</h1>
+                <p>This is your main content area.</p>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Tambahkan FontAwesome -->
-<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-@endsection
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('toggleBtn');
+
+            sidebar.classList.toggle('hidden');
+            toggleBtn.classList.toggle('hidden');
+
+            // Store the sidebar state in localStorage
+            const isHidden = sidebar.classList.contains('hidden');
+            localStorage.setItem('sidebarHidden', isHidden);
+        }
+
+        // Check sidebar state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const isHidden = localStorage.getItem('sidebarHidden') === 'true';
+            if (isHidden) {
+                document.getElementById('sidebar').classList.add('hidden');
+                document.getElementById('toggleBtn').classList.add('hidden');
+            }
+        });
+    </script>
+    @endsection
