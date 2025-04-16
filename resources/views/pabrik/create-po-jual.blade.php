@@ -128,31 +128,27 @@
         // Counter untuk index item baru
         let itemCounter = 1;
         
-        // Fungsi untuk menghitung total keseluruhan
-        function calculateGrandTotal() {
-            let grandTotal = 0;
-            
-            // Ambil semua subtotal dan jumlahkan
-            document.querySelectorAll('.item-subtotal').forEach(function(element) {
-                const subtotalText = element.value;
-                if (subtotalText) {
-                    // Jika subtotal berbentuk format mata uang, ekstrak nilai numeriknya
-                    const subtotal = parseFloat(subtotalText.replace(/[^0-9.-]+/g, '')) || 0;
-                    grandTotal += subtotal;
-                }
-            });
-            
-            // Format grand total ke format rupiah
-            const formatter = new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0
-            });
-            
-            // Update tampilan grand total
-            document.getElementById('grand-total').textContent = formatter.format(grandTotal);
-            document.getElementById('total-price-input').value = grandTotal;
+// Fungsi untuk menghitung total keseluruhan
+function calculateGrandTotal() {
+    let grandTotal = 0;
+    
+    // Ambil semua subtotal dan jumlahkan
+    document.querySelectorAll('.item-subtotal').forEach(function(element) {
+        const subtotalText = element.value;
+        if (subtotalText) {
+            // Extract numeric value from formatted currency string
+            const subtotal = parseFloat(subtotalText.replace(/[^0-9,-]+/g, '').replace(',', '.')) || 0;
+            grandTotal += subtotal;
         }
+    });
+    
+    // Format grand total as Rupiah with thousands separator manually
+    const formattedTotal = 'Rp ' + grandTotal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    
+    // Update display and hidden input
+    document.getElementById('grand-total').textContent = formattedTotal;
+    document.getElementById('total-price-input').value = grandTotal;
+}
         
         // Fungsi untuk menghitung subtotal untuk sebuah baris item
         function calculateSubtotal(row) {
