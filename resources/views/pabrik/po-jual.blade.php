@@ -73,6 +73,9 @@
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin ingin membatalkan PO ini?')">Cancel</button>
                                     </form>
+                                @else
+                                    <!-- Surat Jalan Button for approved POs -->
+                                    <a href="{{ route('pabrik.po-jual.surat-jalan', $p->id_penjualan) }}" class="btn btn-sm btn-primary" target="_blank">Surat Jalan</a>
                                 @endif
                             </td>
                         </tr>

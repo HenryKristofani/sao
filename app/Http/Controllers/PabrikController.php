@@ -321,4 +321,37 @@ class PabrikController extends Controller
             return back()->with('error', 'Terjadi kesalahan saat approve: ' . $e->getMessage());
         }
     }
+
+    public function generateSuratJalan($id)
+    {
+        // Find the approved PO
+        $penjualan = Penjualan::with(['pelanggan', 'karyawan', 'detailPenjualan.item'])
+            ->where('id_penjualan', $id)
+            ->firstOrFail();
+            
+        // Get the PO number from the first detail
+        $poNumber = $penjualan->getNoPoJual();
+        
+        if (!$poNumber) {
+            return back()->with('error', 'Tidak dapat menemukan nomor PO untuk penjualan ini.');
+        }
+        
+        // Prepare data for PDF
+        $data = [
+            'penjualan' => $penjualan,
+            'poNumber' => $poNumber,
+            'tanggal' => date('d-m-Y'),
+            'nomor' => 'SJ/' . date('Ymd') . '/' . sprintf('%04d', $id),
+            'details' => $penjualan->detailPenjualan
+        ];
+        
+        // Load PDF view
+        $pdf = \PDF::loadView('pabrik.surat-jalan-pdf', $data);
+        
+        // Set paper size
+        $pdf->setPaper('a4', 'portrait');
+        
+        // Download PDF file with nice filename
+        return $pdf->stream('surat-jalan-' . $poNumber . '.pdf');
+    }
 }
