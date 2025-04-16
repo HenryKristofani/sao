@@ -24,6 +24,7 @@ class PabrikController extends Controller
         // Add 'status' attribute to each draft PO
         $draftPenjualan->each(function ($item) {
             $item->status = 'draft';
+            // No PO number for drafts
         });
         
         // Get approved POs
@@ -263,6 +264,27 @@ class PabrikController extends Controller
             // Find the draft PO
             $draftPenjualan = DraftPenjualan::with('detailPenjualan')->findOrFail($id);
             
+            // Generate PO number
+            // Format: POJ-YYYYMMDD-XXX (XXX is a sequential number)
+            $today = date('Ymd');
+            $prefix = "POJ-" . date('Ymd') . "-";
+            
+            // Get the last PO number with today's date
+            $lastPo = DetailPenjualan::where('no_po_jual', 'like', $prefix . '%')
+                ->orderBy('no_po_jual', 'desc')
+                ->first();
+                
+            if ($lastPo) {
+                // Extract the numeric part and increment
+                $lastNumber = (int)substr($lastPo->no_po_jual, -3);
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
+            
+            // Format with leading zeros
+            $poNumber = $prefix . sprintf('%03d', $newNumber);
+            
             // Create new Penjualan record
             $penjualan = new Penjualan();
             $penjualan->id_pelanggan = $draftPenjualan->id_pelanggan;
@@ -278,6 +300,7 @@ class PabrikController extends Controller
             foreach ($detailItems as $item) {
                 $detailPenjualan = new DetailPenjualan();
                 $detailPenjualan->id_penjualan = $penjualan->id_penjualan;
+                $detailPenjualan->no_po_jual = $poNumber; // Add PO number
                 $detailPenjualan->id_item = $item->id_item;
                 $detailPenjualan->jumlah_jual = $item->jumlah_jual;
                 $detailPenjualan->harga_jual_satuan = $item->harga_jual_satuan;

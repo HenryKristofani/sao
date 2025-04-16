@@ -31,4 +31,11 @@ class Penjualan extends Model
     {
         return $this->hasMany(DetailPenjualan::class, 'id_penjualan', 'id_penjualan');
     }
+    
+    // New method to get the PO number
+    public function getNoPoJual()
+    {
+        $detail = $this->detailPenjualan()->first();
+        return $detail ? $detail->no_po_jual : null;
+    }
 }

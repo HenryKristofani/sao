@@ -17,6 +17,11 @@
                 <div class="row">
                     <div class="col-md-6">
                         <dl class="row">
+                            @if($isApproved && count($detailPenjualan) > 0)
+                                <dt class="col-sm-4">Nomor PO</dt>
+                                <dd class="col-sm-8">{{ $detailPenjualan->first()->no_po_jual }}</dd>
+                            @endif
+                            
                             <dt class="col-sm-4">ID Penjualan</dt>
                             <dd class="col-sm-8">{{ $penjualan->id_penjualan }}</dd>
                             
@@ -37,6 +42,15 @@
                             
                             <dt class="col-sm-4">Jumlah Item</dt>
                             <dd class="col-sm-8">{{ $detailPenjualan->count() }} item</dd>
+                            
+                            <dt class="col-sm-4">Status</dt>
+                            <dd class="col-sm-8">
+                                @if($isApproved)
+                                    <span class="badge bg-success">Approved</span>
+                                @else
+                                    <span class="badge bg-warning">Draft</span>
+                                @endif
+                            </dd>
                         </dl>
                     </div>
                 </div>

@@ -21,6 +21,7 @@
                     <table class="table table-hover">
                     <thead>
                         <tr>
+                            <th>No PO</th>
                             <th>ID Penjualan</th>
                             <th>Pelanggan</th>
                             <th>Tanggal</th>
@@ -34,6 +35,13 @@
                     <tbody>
                     @forelse($penjualan as $p)
                         <tr>
+                            <td>
+                                @if($p->status == 'approved')
+                                    {{ $p->getNoPoJual() }}
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
                             <td>{{ $p->id_penjualan }}</td>
                             <td>{{ $p->pelanggan->nama_pelanggan }}</td>
                             <td>{{ $p->tanggal_penjualan }}</td>
@@ -70,7 +78,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center">Tidak ada data PO penjualan</td>
+                            <td colspan="9" class="text-center">Tidak ada data PO penjualan</td>
                         </tr>
                     @endforelse
                     </tbody>
