@@ -132,4 +132,87 @@ class PabrikController extends Controller
         }
     }
     
+    public function editPoJual($id)
+    {
+        // Get the PO data
+        $penjualan = DraftPenjualan::with(['pelanggan', 'karyawan'])->findOrFail($id);
+        $detailPenjualan = DraftDetailPenjualan::with('item')->where('id_penjualan', $id)->get();
+        
+        // Get data for dropdowns
+        $items = Item::all();
+        $pelanggan = Pelanggan::all();
+        $karyawan = Karyawan::all();
+        
+        return view('pabrik.edit-po-jual', [
+            'penjualan' => $penjualan,
+            'detailPenjualan' => $detailPenjualan,
+            'items' => $items,
+            'pelanggan' => $pelanggan,
+            'karyawan' => $karyawan
+        ]);
+    }
+    
+    public function updatePoJual(Request $request, $id)
+    {
+        // Validasi input
+        $request->validate([
+            'customer_id' => 'required|exists:pelanggan,id_pelanggan',
+            'employee_id' => 'required|exists:karyawan,id_karyawan',
+            'items' => 'required|array|min:1',
+            'items.*.item_id' => 'required|exists:item,id_item',
+            'items.*.quantity' => 'required|numeric|min:1',
+        ]);
+        
+        // Begin transaction
+        DB::beginTransaction();
+        
+        try {
+            // Hitung total harga penjualan
+            $totalPrice = 0;
+            
+            // Verifikasi dan hitung total harga dari setiap item
+            foreach ($request->items as $item) {
+                $itemRecord = Item::findOrFail($item['item_id']);
+                $price = $itemRecord->harga_per_item;
+                $quantity = $item['quantity'];
+                $subtotal = $price * $quantity;
+                $totalPrice += $subtotal;
+            }
+            
+            // Update data penjualan
+            $draftPenjualan = DraftPenjualan::findOrFail($id);
+            $draftPenjualan->id_pelanggan = $request->customer_id;
+            $draftPenjualan->total_harga_penjualan = $totalPrice;
+            $draftPenjualan->id_karyawan = $request->employee_id;
+            $draftPenjualan->save();
+            
+            // Hapus semua detail penjualan lama
+            DraftDetailPenjualan::where('id_penjualan', $id)->delete();
+            
+            // Buat detail penjualan baru
+            foreach ($request->items as $item) {
+                $itemRecord = Item::findOrFail($item['item_id']);
+                $price = $itemRecord->harga_per_item;
+                $quantity = $item['quantity'];
+                $subtotal = $price * $quantity;
+                
+                $draftDetailPenjualan = new DraftDetailPenjualan();
+                $draftDetailPenjualan->id_penjualan = $id;
+                $draftDetailPenjualan->id_item = $item['item_id'];
+                $draftDetailPenjualan->jumlah_jual = $quantity;
+                $draftDetailPenjualan->harga_jual_satuan = $price;
+                $draftDetailPenjualan->subtotal_harga = $subtotal;
+                $draftDetailPenjualan->save();
+            }
+            
+            DB::commit();
+            
+            return redirect()->route('pabrik.po-jual')
+                ->with('success', 'PO Penjualan berhasil diperbarui!');
+                
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
 }
