@@ -8,18 +8,39 @@ use App\Models\Pelanggan;
 use App\Models\Karyawan;
 use App\Models\DraftPenjualan;
 use App\Models\DraftDetailPenjualan;
+use App\Models\Penjualan;
+use App\Models\DetailPenjualan;
 use Illuminate\Support\Facades\DB;
 
 class PabrikController extends Controller
 {
     public function showPoJual()
     {
-        $penjualan = DraftPenjualan::with(['pelanggan', 'karyawan'])
+        // Get draft POs
+        $draftPenjualan = DraftPenjualan::with(['pelanggan', 'karyawan', 'detailPenjualan'])
             ->orderBy('id_penjualan', 'desc')
             ->get();
         
+        // Add 'status' attribute to each draft PO
+        $draftPenjualan->each(function ($item) {
+            $item->status = 'draft';
+        });
+        
+        // Get approved POs
+        $approvedPenjualan = Penjualan::with(['pelanggan', 'karyawan', 'detailPenjualan'])
+            ->orderBy('id_penjualan', 'desc')
+            ->get();
+        
+        // Add 'status' attribute to each approved PO
+        $approvedPenjualan->each(function ($item) {
+            $item->status = 'approved';
+        });
+        
+        // Merge both collections and sort by id_penjualan descending
+        $allPenjualan = $draftPenjualan->concat($approvedPenjualan)->sortByDesc('id_penjualan');
+        
         return view('pabrik.po-jual', [
-            'penjualan' => $penjualan
+            'penjualan' => $allPenjualan
         ]);
     }
     
@@ -101,17 +122,34 @@ class PabrikController extends Controller
     
     public function showDetailPoJual($id)
     {
+        // Try to find in draft first
         $penjualan = DraftPenjualan::with(['pelanggan', 'karyawan'])
             ->where('id_penjualan', $id)
-            ->firstOrFail();
+            ->first();
         
-        $detailPenjualan = DraftDetailPenjualan::with('item')
-            ->where('id_penjualan', $id)
-            ->get();
+        $isApproved = false;
+        
+        // If not found in draft, check in approved penjualan
+        if (!$penjualan) {
+            $penjualan = Penjualan::with(['pelanggan', 'karyawan'])
+                ->where('id_penjualan', $id)
+                ->firstOrFail();
+            
+            $detailPenjualan = DetailPenjualan::with('item')
+                ->where('id_penjualan', $id)
+                ->get();
+                
+            $isApproved = true;
+        } else {
+            $detailPenjualan = DraftDetailPenjualan::with('item')
+                ->where('id_penjualan', $id)
+                ->get();
+        }
         
         return view('pabrik.po-jual-detail', [
             'penjualan' => $penjualan,
-            'detailPenjualan' => $detailPenjualan
+            'detailPenjualan' => $detailPenjualan,
+            'isApproved' => $isApproved
         ]);
     }
 
@@ -213,6 +251,51 @@ class PabrikController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function approvePoJual($id)
+    {
+        // Begin transaction
+        DB::beginTransaction();
+        
+        try {
+            // Find the draft PO
+            $draftPenjualan = DraftPenjualan::with('detailPenjualan')->findOrFail($id);
+            
+            // Create new Penjualan record
+            $penjualan = new Penjualan();
+            $penjualan->id_pelanggan = $draftPenjualan->id_pelanggan;
+            $penjualan->tanggal_penjualan = $draftPenjualan->tanggal_penjualan;
+            $penjualan->total_harga_penjualan = $draftPenjualan->total_harga_penjualan;
+            $penjualan->id_karyawan = $draftPenjualan->id_karyawan;
+            $penjualan->save();
+            
+            // Get all detail items
+            $detailItems = DraftDetailPenjualan::where('id_penjualan', $id)->get();
+            
+            // Create detail records
+            foreach ($detailItems as $item) {
+                $detailPenjualan = new DetailPenjualan();
+                $detailPenjualan->id_penjualan = $penjualan->id_penjualan;
+                $detailPenjualan->id_item = $item->id_item;
+                $detailPenjualan->jumlah_jual = $item->jumlah_jual;
+                $detailPenjualan->harga_jual_satuan = $item->harga_jual_satuan;
+                $detailPenjualan->subtotal_harga = $item->subtotal_harga;
+                $detailPenjualan->save();
+            }
+            
+            // Delete draft records after successful transfer
+            DraftDetailPenjualan::where('id_penjualan', $id)->delete();
+            $draftPenjualan->delete();
+            
+            DB::commit();
+            
+            return redirect()->route('pabrik.po-jual')->with('success', 'PO Penjualan berhasil diapprove!');
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Terjadi kesalahan saat approve: ' . $e->getMessage());
         }
     }
 }

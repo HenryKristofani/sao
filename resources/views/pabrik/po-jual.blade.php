@@ -19,43 +19,61 @@
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID Penjualan</th>
-                                <th>Pelanggan</th>
-                                <th>Tanggal</th>
-                                <th>Jumlah Item</th>
-                                <th>Total Harga</th>
-                                <th>Karyawan</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($penjualan as $p)
-                                <tr>
-                                    <td>{{ $p->id_penjualan }}</td>
-                                    <td>{{ $p->pelanggan->nama_pelanggan }}</td>
-                                    <td>{{ $p->tanggal_penjualan }}</td>
-                                    <td>{{ $p->detailPenjualan->count() }} item</td>
-                                    <td>Rp {{ number_format($p->total_harga_penjualan, 0, ',', '.') }}</td>
-                                    <td>{{ $p->karyawan->nama_karyawan }}</td>
-                                    <td>
-                                        <a href="{{ route('pabrik.po-jual.show', $p->id_penjualan) }}" class="btn btn-sm btn-info">Detail</a>
-                                        <a href="{{ route('pabrik.po-jual.edit', $p->id_penjualan) }}" class="btn btn-sm btn-warning">Edit</a>
-                                        <!-- Cancel Button -->
-                                        <form action="{{ route('pabrik.po-jual.cancel', $p->id_penjualan) }}" method="POST" style="display:inline;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin ingin membatalkan PO ini?')">Cancel</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="text-center">Tidak ada data PO penjualan</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
+                    <thead>
+                        <tr>
+                            <th>ID Penjualan</th>
+                            <th>Pelanggan</th>
+                            <th>Tanggal</th>
+                            <th>Jumlah Item</th>
+                            <th>Total Harga</th>
+                            <th>Karyawan</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @forelse($penjualan as $p)
+                        <tr>
+                            <td>{{ $p->id_penjualan }}</td>
+                            <td>{{ $p->pelanggan->nama_pelanggan }}</td>
+                            <td>{{ $p->tanggal_penjualan }}</td>
+                            <td>{{ $p->detailPenjualan->count() }} item</td>
+                            <td>Rp {{ number_format($p->total_harga_penjualan, 0, ',', '.') }}</td>
+                            <td>{{ $p->karyawan->nama_karyawan }}</td>
+                            <td>
+                                @if($p->status == 'draft')
+                                    <span class="badge bg-warning">Draft</span>
+                                @else
+                                    <span class="badge bg-success">Approved</span>
+                                @endif
+                            </td>
+                            <td>
+                                <a href="{{ route('pabrik.po-jual.show', $p->id_penjualan) }}" class="btn btn-sm btn-info">Detail</a>
+                                
+                                @if($p->status == 'draft')
+                                    <a href="{{ route('pabrik.po-jual.edit', $p->id_penjualan) }}" class="btn btn-sm btn-warning">Edit</a>
+                                    
+                                    <!-- Approve Button -->
+                                    <form action="{{ route('pabrik.po-jual.approve', $p->id_penjualan) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Apakah Anda yakin ingin approve PO ini?')">Approve</button>
+                                    </form>
+                                    
+                                    <!-- Cancel Button -->
+                                    <form action="{{ route('pabrik.po-jual.cancel', $p->id_penjualan) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin ingin membatalkan PO ini?')">Cancel</button>
+                                    </form>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="text-center">Tidak ada data PO penjualan</td>
+                        </tr>
+                    @endforelse
+                    </tbody>
                     </table>
                 </div>
             </div>

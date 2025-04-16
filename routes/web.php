@@ -81,4 +81,5 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pabrik/po-jual/{id}/edit', [PabrikController::class, 'editPoJual'])->name('pabrik.po-jual.edit');
     Route::put('/pabrik/po-jual/{id}', [PabrikController::class, 'updatePoJual'])->name('pabrik.po-jual.update');
     Route::delete('/pabrik/po-jual/{id}/cancel', [PabrikController::class, 'cancelPoJual'])->name('pabrik.po-jual.cancel');
+    Route::post('/pabrik/po-jual/{id}/approve', [PabrikController::class, 'approvePoJual'])->name('pabrik.po-jual.approve');
 });
