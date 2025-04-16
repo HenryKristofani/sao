@@ -77,6 +77,5 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pabrik/po-jual', [PabrikController::class, 'showPoJual'])->name('pabrik.po-jual');
     Route::get('/pabrik/po-jual/create', [PabrikController::class, 'createPoJual'])->name('pabrik.po-jual.create');
     Route::post('/pabrik/po-jual', [PabrikController::class, 'storePoJual'])->name('pabrik.po-jual.store');
+    Route::get('/pabrik/po-jual/{id}', [PabrikController::class, 'showDetailPoJual'])->name('pabrik.po-jual.show');
 });
-
-Route::get('/pabrik/po-jual/{id}', [PabrikController::class, 'showDetailPoJual'])->name('pabrik.po-jual.show');

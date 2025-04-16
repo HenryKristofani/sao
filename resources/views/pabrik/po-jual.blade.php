@@ -24,6 +24,7 @@
                                 <th>ID Penjualan</th>
                                 <th>Pelanggan</th>
                                 <th>Tanggal</th>
+                                <th>Jumlah Item</th>
                                 <th>Total Harga</th>
                                 <th>Karyawan</th>
                                 <th>Aksi</th>
@@ -35,7 +36,8 @@
                                     <td>{{ $p->id_penjualan }}</td>
                                     <td>{{ $p->pelanggan->nama_pelanggan }}</td>
                                     <td>{{ $p->tanggal_penjualan }}</td>
-                                    <td>{{ number_format($p->total_harga_penjualan, 0, ',', '.') }}</td>
+                                    <td>{{ $p->detailPenjualan->count() }} item</td>
+                                    <td>Rp {{ number_format($p->total_harga_penjualan, 0, ',', '.') }}</td>
                                     <td>{{ $p->karyawan->nama_karyawan }}</td>
                                     <td>
                                         <a href="{{ route('pabrik.po-jual.show', $p->id_penjualan) }}" class="btn btn-sm btn-info">Detail</a>
@@ -43,7 +45,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center">Tidak ada data PO penjualan</td>
+                                    <td colspan="7" class="text-center">Tidak ada data PO penjualan</td>
                                 </tr>
                             @endforelse
                         </tbody>

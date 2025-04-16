@@ -11,7 +11,18 @@ use App\Models\DraftDetailPenjualan;
 use Illuminate\Support\Facades\DB;
 
 class PabrikController extends Controller
-{    
+{
+    public function showPoJual()
+    {
+        $penjualan = DraftPenjualan::with(['pelanggan', 'karyawan'])
+            ->orderBy('id_penjualan', 'desc')
+            ->get();
+        
+        return view('pabrik.po-jual', [
+            'penjualan' => $penjualan
+        ]);
+    }
+    
     public function createPoJual()
     {
         // Ambil data untuk dropdown
@@ -19,20 +30,10 @@ class PabrikController extends Controller
         $pelanggan = Pelanggan::all();
         $karyawan = Karyawan::all();
         
-        // Convert items ke format JSON untuk digunakan di JavaScript
-        $itemsJson = $items->map(function($item) {
-            return [
-                'id' => $item->id_item,
-                'nama' => $item->nama_item,
-                'harga' => $item->harga_per_item
-            ];
-        })->toJson();
-        
         return view('pabrik.create-po-jual', [
             'items' => $items,
             'pelanggan' => $pelanggan,
-            'karyawan' => $karyawan,
-            'itemsJson' => $itemsJson
+            'karyawan' => $karyawan
         ]);
     }
     
@@ -40,42 +41,52 @@ class PabrikController extends Controller
     {
         // Validasi input
         $request->validate([
-            'item_id' => 'required|exists:item,id_item',
-            'quantity' => 'required|numeric|min:1',
-            'unit_price' => 'required|numeric|min:0',
             'customer_id' => 'required|exists:pelanggan,id_pelanggan',
             'employee_id' => 'required|exists:karyawan,id_karyawan',
+            'items' => 'required|array|min:1',
+            'items.*.item_id' => 'required|exists:item,id_item',
+            'items.*.quantity' => 'required|numeric|min:1',
         ]);
-        
-        // Ambil data item untuk memverifikasi harga
-        $item = Item::findOrFail($request->item_id);
-        
-        // Gunakan harga per item dari database
-        $unitPrice = $item->harga_per_item;
-        
-        // Hitung subtotal dan total
-        $subtotal = $request->quantity * $unitPrice;
         
         // Begin transaction
         DB::beginTransaction();
         
         try {
+            // Hitung total harga penjualan
+            $totalPrice = 0;
+            
+            // Verifikasi dan hitung total harga dari setiap item
+            foreach ($request->items as $item) {
+                $itemRecord = Item::findOrFail($item['item_id']);
+                $price = $itemRecord->harga_per_item;
+                $quantity = $item['quantity'];
+                $subtotal = $price * $quantity;
+                $totalPrice += $subtotal;
+            }
+            
             // Simpan data penjualan
             $draftPenjualan = new DraftPenjualan();
             $draftPenjualan->id_pelanggan = $request->customer_id;
             $draftPenjualan->tanggal_penjualan = date('Y-m-d');
-            $draftPenjualan->total_harga_penjualan = $subtotal; // Asumsi tidak ada diskon
+            $draftPenjualan->total_harga_penjualan = $totalPrice;
             $draftPenjualan->id_karyawan = $request->employee_id;
             $draftPenjualan->save();
             
-            // Simpan detail penjualan
-            $draftDetailPenjualan = new DraftDetailPenjualan();
-            $draftDetailPenjualan->id_penjualan = $draftPenjualan->id_penjualan;
-            $draftDetailPenjualan->id_item = $request->item_id;
-            $draftDetailPenjualan->jumlah_jual = $request->quantity;
-            $draftDetailPenjualan->harga_jual_satuan = $unitPrice;
-            $draftDetailPenjualan->subtotal_harga = $subtotal;
-            $draftDetailPenjualan->save();
+            // Simpan detail penjualan untuk setiap item
+            foreach ($request->items as $item) {
+                $itemRecord = Item::findOrFail($item['item_id']);
+                $price = $itemRecord->harga_per_item;
+                $quantity = $item['quantity'];
+                $subtotal = $price * $quantity;
+                
+                $draftDetailPenjualan = new DraftDetailPenjualan();
+                $draftDetailPenjualan->id_penjualan = $draftPenjualan->id_penjualan;
+                $draftDetailPenjualan->id_item = $item['item_id'];
+                $draftDetailPenjualan->jumlah_jual = $quantity;
+                $draftDetailPenjualan->harga_jual_satuan = $price;
+                $draftDetailPenjualan->subtotal_harga = $subtotal;
+                $draftDetailPenjualan->save();
+            }
             
             DB::commit();
             
@@ -86,17 +97,6 @@ class PabrikController extends Controller
             DB::rollback();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-    }
-
-    public function showPoJual()
-    {
-        $penjualan = DraftPenjualan::with(['pelanggan', 'karyawan'])
-            ->orderBy('id_penjualan', 'desc')
-            ->get();
-        
-        return view('pabrik.po-jual', [
-            'penjualan' => $penjualan
-        ]);
     }
     
     public function showDetailPoJual($id)

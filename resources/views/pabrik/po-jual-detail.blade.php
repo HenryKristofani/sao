@@ -34,6 +34,9 @@
                             
                             <dt class="col-sm-4">Karyawan</dt>
                             <dd class="col-sm-8">{{ $penjualan->karyawan->nama_karyawan }}</dd>
+                            
+                            <dt class="col-sm-4">Jumlah Item</dt>
+                            <dd class="col-sm-8">{{ $detailPenjualan->count() }} item</dd>
                         </dl>
                     </div>
                 </div>
@@ -49,16 +52,18 @@
                     <table class="table table-bordered">
                         <thead>
                             <tr>
+                                <th>No</th>
                                 <th>ID Detail</th>
-                                <th>Item</th>
+                                <th>Nama Item</th>
                                 <th>Jumlah</th>
                                 <th>Harga Satuan</th>
                                 <th>Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($detailPenjualan as $detail)
+                            @foreach($detailPenjualan as $index => $detail)
                                 <tr>
+                                    <td>{{ $index + 1 }}</td>
                                     <td>{{ $detail->id_detail_penjualan }}</td>
                                     <td>{{ $detail->item->nama_item }}</td>
                                     <td>{{ $detail->jumlah_jual }}</td>
@@ -69,7 +74,7 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <th colspan="4" class="text-end">Total</th>
+                                <th colspan="5" class="text-end">Total</th>
                                 <th>Rp {{ number_format($penjualan->total_harga_penjualan, 0, ',', '.') }}</th>
                             </tr>
                         </tfoot>

@@ -20,7 +20,7 @@
 
         <div class="card">
             <div class="card-body">
-                <form action="{{ route('pabrik.po-jual.store') }}" method="POST">
+                <form action="{{ route('pabrik.po-jual.store') }}" method="POST" id="poForm">
                     @csrf
                     <div class="mb-3">
                         <label for="id_detail_sales" class="form-label">ID Detail Penjualan</label>
@@ -30,40 +30,6 @@
                     <div class="mb-3">
                         <label for="id_sales" class="form-label">ID Penjualan</label>
                         <input type="text" class="form-control bg-light" id="id_sales" value="Otomatis" readonly>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="item_id" class="form-label">ID Item</label>
-                        <select name="item_id" class="form-select" id="item_id" required>
-                            <option value="">Pilih Item</option>
-                            @foreach($items as $item)
-                                <option value="{{ $item->id_item }}">{{ $item->nama_item }}</option>
-                            @endforeach
-                        </select>
-                        @error('item_id')
-                            <div class="text-danger">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="quantity" class="form-label">Jumlah Jual</label>
-                        <input type="number" name="quantity" class="form-control" id="quantity" placeholder="Masukkan Kuantitas" required>
-                        @error('quantity')
-                            <div class="text-danger">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="unit_price" class="form-label">Harga Jual Satuan</label>
-                        <input type="number" name="unit_price" class="form-control" id="unit_price" placeholder="Harga akan otomatis terisi" readonly>
-                        @error('unit_price')
-                            <div class="text-danger">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="subtotal_price" class="form-label">Subtotal Harga</label>
-                        <input type="text" class="form-control bg-light" id="subtotal_price" value="Otomatis" readonly>
                     </div>
 
                     <div class="mb-3">
@@ -81,13 +47,7 @@
 
                     <div class="mb-3">
                         <label for="sale_date" class="form-label">Tanggal Penjualan</label>
-                        <input type="date" class="form-control bg-light" id="sale_date" value="{{ date('Y-m-d') }}" readonly>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="total_sale_price" class="form-label">Total Harga Penjualan</label>
-                        <input type="text" class="form-control bg-light" id="total_sale_price" value="Otomatis" readonly>
-                        <small class="form-text text-muted">Total harga setelah diskon (jika ada)</small>
+                        <input type="date" class="form-control bg-light" name="sale_date" id="sale_date" value="{{ date('Y-m-d') }}" readonly>
                     </div>
 
                     <div class="mb-3">
@@ -103,6 +63,61 @@
                         @enderror
                     </div>
 
+                    <hr>
+                    <h5 class="mb-3">Detail Item</h5>
+
+                    <div id="items-container">
+                        <div class="item-row mb-4 border p-3 rounded">
+                            <div class="row">
+                                <div class="col-md-4 mb-2">
+                                    <label class="form-label">Nama Item</label>
+                                    <select name="items[0][item_id]" class="form-select item-select" required>
+                                        <option value="">Pilih Item</option>
+                                        @foreach($items as $item)
+                                            <option value="{{ $item->id_item }}" data-price="{{ $item->harga_per_item }}">{{ $item->nama_item }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label class="form-label">Jumlah</label>
+                                    <input type="number" name="items[0][quantity]" class="form-control item-quantity" min="1" required>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label class="form-label">Harga Satuan</label>
+                                    <input type="number" name="items[0][unit_price]" class="form-control item-price" readonly>
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="form-label">Subtotal</label>
+                                    <input type="text" class="form-control item-subtotal" readonly>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <button type="button" class="btn btn-sm btn-danger remove-item" style="display: none;">Hapus Item</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-success" id="add-item">Tambah Item</button>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-8"></div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <strong>Total:</strong>
+                                        <span id="grand-total">Rp 0</span>
+                                        <input type="hidden" name="total_price" id="total-price-input" value="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <button type="submit" class="btn btn-primary">Buat PO</button>
                 </form>
             </div>
@@ -110,42 +125,44 @@
     </div>
 
     <script>
-        // Data items dari PHP ke JavaScript
-        const items = @json($itemsJson);
+        // Counter untuk index item baru
+        let itemCounter = 1;
         
-        const itemSelect = document.getElementById('item_id');
-        const quantityInput = document.getElementById('quantity');
-        const unitPriceInput = document.getElementById('unit_price');
-        const subtotalPriceInput = document.getElementById('subtotal_price');
-        const totalSalePriceInput = document.getElementById('total_sale_price');
-
-        // Fungsi untuk mengisi harga otomatis saat item dipilih
-        itemSelect.addEventListener('change', function() {
-            const selectedItemId = parseInt(this.value);
+        // Fungsi untuk menghitung total keseluruhan
+        function calculateGrandTotal() {
+            let grandTotal = 0;
             
-            if (selectedItemId) {
-                // Cari item yang dipilih dari array items
-                const selectedItem = JSON.parse(items).find(item => item.id === selectedItemId);
-                
-                if (selectedItem) {
-                    // Isi otomatis harga jual satuan dengan harga dari item
-                    unitPriceInput.value = selectedItem.harga;
-                    
-                    // Hitung ulang subtotal
-                    calculateSubtotal();
+            // Ambil semua subtotal dan jumlahkan
+            document.querySelectorAll('.item-subtotal').forEach(function(element) {
+                const subtotalText = element.value;
+                if (subtotalText) {
+                    // Jika subtotal berbentuk format mata uang, ekstrak nilai numeriknya
+                    const subtotal = parseFloat(subtotalText.replace(/[^0-9.-]+/g, '')) || 0;
+                    grandTotal += subtotal;
                 }
-            } else {
-                // Reset nilai jika tidak ada item dipilih
-                unitPriceInput.value = '';
-                subtotalPriceInput.value = 'Otomatis';
-                totalSalePriceInput.value = 'Otomatis';
-            }
-        });
-
-        function calculateSubtotal() {
+            });
+            
+            // Format grand total ke format rupiah
+            const formatter = new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            });
+            
+            // Update tampilan grand total
+            document.getElementById('grand-total').textContent = formatter.format(grandTotal);
+            document.getElementById('total-price-input').value = grandTotal;
+        }
+        
+        // Fungsi untuk menghitung subtotal untuk sebuah baris item
+        function calculateSubtotal(row) {
+            const quantityInput = row.querySelector('.item-quantity');
+            const priceInput = row.querySelector('.item-price');
+            const subtotalInput = row.querySelector('.item-subtotal');
+            
             const quantity = parseFloat(quantityInput.value) || 0;
-            const unitPrice = parseFloat(unitPriceInput.value) || 0;
-            const subtotal = quantity * unitPrice;
+            const price = parseFloat(priceInput.value) || 0;
+            const subtotal = quantity * price;
             
             // Format ke format rupiah
             const formatter = new Intl.NumberFormat('id-ID', {
@@ -154,11 +171,139 @@
                 minimumFractionDigits: 0
             });
             
-            subtotalPriceInput.value = formatter.format(subtotal);
-            totalSalePriceInput.value = formatter.format(subtotal); // Asumsi tidak ada diskon
+            subtotalInput.value = formatter.format(subtotal);
+            
+            // Update grand total
+            calculateGrandTotal();
         }
-
-        quantityInput.addEventListener('input', calculateSubtotal);
-        unitPriceInput.addEventListener('input', calculateSubtotal);
+        
+        // Fungsi untuk menambahkan baris item baru
+        document.getElementById('add-item').addEventListener('click', function() {
+            const itemsContainer = document.getElementById('items-container');
+            const newRow = document.createElement('div');
+            newRow.className = 'item-row mb-4 border p-3 rounded';
+            
+            newRow.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label">Nama Item</label>
+                        <select name="items[${itemCounter}][item_id]" class="form-select item-select" required>
+                            <option value="">Pilih Item</option>
+                            @foreach($items as $item)
+                                <option value="{{ $item->id_item }}" data-price="{{ $item->harga_per_item }}">{{ $item->nama_item }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label class="form-label">Jumlah</label>
+                        <input type="number" name="items[${itemCounter}][quantity]" class="form-control item-quantity" min="1" required>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label class="form-label">Harga Satuan</label>
+                        <input type="number" name="items[${itemCounter}][unit_price]" class="form-control item-price" readonly>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label">Subtotal</label>
+                        <input type="text" class="form-control item-subtotal" readonly>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <button type="button" class="btn btn-sm btn-danger remove-item">Hapus Item</button>
+                    </div>
+                </div>
+            `;
+            
+            itemsContainer.appendChild(newRow);
+            itemCounter++;
+            
+            // Tampilkan tombol hapus untuk semua baris jika ada lebih dari 1 baris
+            toggleRemoveButtons();
+            setupEventListeners(newRow);
+        });
+        
+        // Fungsi untuk setup event listeners pada baris item
+        function setupEventListeners(row) {
+            const itemSelect = row.querySelector('.item-select');
+            const quantityInput = row.querySelector('.item-quantity');
+            const priceInput = row.querySelector('.item-price');
+            const removeButton = row.querySelector('.remove-item');
+            
+            // Event listener untuk dropdown item
+            itemSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption.value) {
+                    const price = selectedOption.getAttribute('data-price');
+                    priceInput.value = price;
+                    calculateSubtotal(row);
+                } else {
+                    priceInput.value = '';
+                    calculateSubtotal(row);
+                }
+            });
+            
+            // Event listener untuk input kuantitas
+            quantityInput.addEventListener('input', function() {
+                calculateSubtotal(row);
+            });
+            
+            // Event listener untuk tombol hapus
+            removeButton.addEventListener('click', function() {
+                row.remove();
+                toggleRemoveButtons();
+                calculateGrandTotal();
+            });
+        }
+        
+        // Fungsi untuk menampilkan/menyembunyikan tombol hapus
+        function toggleRemoveButtons() {
+            const itemRows = document.querySelectorAll('.item-row');
+            const removeButtons = document.querySelectorAll('.remove-item');
+            
+            if (itemRows.length > 1) {
+                removeButtons.forEach(button => {
+                    button.style.display = 'block';
+                });
+            } else {
+                removeButtons.forEach(button => {
+                    button.style.display = 'none';
+                });
+            }
+        }
+        
+        // Setup initial row
+        document.querySelectorAll('.item-row').forEach(function(row) {
+            setupEventListeners(row);
+        });
+        
+        // Validasi form sebelum submit
+        document.getElementById('poForm').addEventListener('submit', function(event) {
+            const itemRows = document.querySelectorAll('.item-row');
+            let valid = true;
+            
+            itemRows.forEach(function(row) {
+                const itemSelect = row.querySelector('.item-select');
+                const quantityInput = row.querySelector('.item-quantity');
+                
+                if (!itemSelect.value) {
+                    valid = false;
+                    itemSelect.classList.add('is-invalid');
+                } else {
+                    itemSelect.classList.remove('is-invalid');
+                }
+                
+                if (!quantityInput.value || quantityInput.value < 1) {
+                    valid = false;
+                    quantityInput.classList.add('is-invalid');
+                } else {
+                    quantityInput.classList.remove('is-invalid');
+                }
+            });
+            
+            if (!valid) {
+                event.preventDefault();
+                alert('Silakan isi semua data item dengan benar');
+            }
+        });
     </script>
 @endsection
