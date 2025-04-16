@@ -55,7 +55,7 @@
 
                     <div class="mb-3">
                         <label for="unit_price" class="form-label">Harga Jual Satuan</label>
-                        <input type="number" name="unit_price" class="form-control" id="unit_price" placeholder="Masukkan Harga Satuan" required>
+                        <input type="number" name="unit_price" class="form-control" id="unit_price" placeholder="Harga akan otomatis terisi" readonly>
                         @error('unit_price')
                             <div class="text-danger">{{ $message }}</div>
                         @enderror
@@ -110,10 +110,37 @@
     </div>
 
     <script>
+        // Data items dari PHP ke JavaScript
+        const items = @json($itemsJson);
+        
+        const itemSelect = document.getElementById('item_id');
         const quantityInput = document.getElementById('quantity');
         const unitPriceInput = document.getElementById('unit_price');
         const subtotalPriceInput = document.getElementById('subtotal_price');
         const totalSalePriceInput = document.getElementById('total_sale_price');
+
+        // Fungsi untuk mengisi harga otomatis saat item dipilih
+        itemSelect.addEventListener('change', function() {
+            const selectedItemId = parseInt(this.value);
+            
+            if (selectedItemId) {
+                // Cari item yang dipilih dari array items
+                const selectedItem = JSON.parse(items).find(item => item.id === selectedItemId);
+                
+                if (selectedItem) {
+                    // Isi otomatis harga jual satuan dengan harga dari item
+                    unitPriceInput.value = selectedItem.harga;
+                    
+                    // Hitung ulang subtotal
+                    calculateSubtotal();
+                }
+            } else {
+                // Reset nilai jika tidak ada item dipilih
+                unitPriceInput.value = '';
+                subtotalPriceInput.value = 'Otomatis';
+                totalSalePriceInput.value = 'Otomatis';
+            }
+        });
 
         function calculateSubtotal() {
             const quantity = parseFloat(quantityInput.value) || 0;

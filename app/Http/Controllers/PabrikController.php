@@ -19,10 +19,20 @@ class PabrikController extends Controller
         $pelanggan = Pelanggan::all();
         $karyawan = Karyawan::all();
         
+        // Convert items ke format JSON untuk digunakan di JavaScript
+        $itemsJson = $items->map(function($item) {
+            return [
+                'id' => $item->id_item,
+                'nama' => $item->nama_item,
+                'harga' => $item->harga_per_item
+            ];
+        })->toJson();
+        
         return view('pabrik.create-po-jual', [
             'items' => $items,
             'pelanggan' => $pelanggan,
-            'karyawan' => $karyawan
+            'karyawan' => $karyawan,
+            'itemsJson' => $itemsJson
         ]);
     }
     
@@ -37,8 +47,14 @@ class PabrikController extends Controller
             'employee_id' => 'required|exists:karyawan,id_karyawan',
         ]);
         
+        // Ambil data item untuk memverifikasi harga
+        $item = Item::findOrFail($request->item_id);
+        
+        // Gunakan harga per item dari database
+        $unitPrice = $item->harga_per_item;
+        
         // Hitung subtotal dan total
-        $subtotal = $request->quantity * $request->unit_price;
+        $subtotal = $request->quantity * $unitPrice;
         
         // Begin transaction
         DB::beginTransaction();
@@ -57,7 +73,7 @@ class PabrikController extends Controller
             $draftDetailPenjualan->id_penjualan = $draftPenjualan->id_penjualan;
             $draftDetailPenjualan->id_item = $request->item_id;
             $draftDetailPenjualan->jumlah_jual = $request->quantity;
-            $draftDetailPenjualan->harga_jual_satuan = $request->unit_price;
+            $draftDetailPenjualan->harga_jual_satuan = $unitPrice;
             $draftDetailPenjualan->subtotal_harga = $subtotal;
             $draftDetailPenjualan->save();
             
