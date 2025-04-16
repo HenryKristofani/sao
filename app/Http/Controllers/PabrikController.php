@@ -114,4 +114,22 @@ class PabrikController extends Controller
             'detailPenjualan' => $detailPenjualan
         ]);
     }
+
+    public function cancelPoJual($id)
+    {
+        try {
+            $draftPenjualan = DraftPenjualan::findOrFail($id);
+    
+            // Delete related draft details
+            DraftDetailPenjualan::where('id_penjualan', $id)->delete();
+    
+            // Delete the draft penjualan (PO)
+            $draftPenjualan->delete();
+    
+            return redirect()->route('pabrik.po-jual')->with('success', 'PO Penjualan berhasil dibatalkan!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+    
 }

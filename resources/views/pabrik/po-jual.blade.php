@@ -41,6 +41,13 @@
                                     <td>{{ $p->karyawan->nama_karyawan }}</td>
                                     <td>
                                         <a href="{{ route('pabrik.po-jual.show', $p->id_penjualan) }}" class="btn btn-sm btn-info">Detail</a>
+
+                                        <!-- Cancel Button -->
+                                        <form action="{{ route('pabrik.po-jual.cancel', $p->id_penjualan) }}" method="POST" style="display:inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin ingin membatalkan PO ini?')">Cancel</button>
+                                        </form>
                                     </td>
                                 </tr>
                             @empty
