@@ -71,3 +71,12 @@ Route::get('/pabrik/po-jual/create', function () {
     return view('pabrik.create-po-jual');
 })->name('pabrik.po-jual.create');
 
+
+// Rute PO Penjualan
+Route::middleware(['auth'])->group(function () {
+    Route::get('/pabrik/po-jual', [PabrikController::class, 'showPoJual'])->name('pabrik.po-jual');
+    Route::get('/pabrik/po-jual/create', [PabrikController::class, 'createPoJual'])->name('pabrik.po-jual.create');
+    Route::post('/pabrik/po-jual', [PabrikController::class, 'storePoJual'])->name('pabrik.po-jual.store');
+});
+
+Route::get('/pabrik/po-jual/{id}', [PabrikController::class, 'showDetailPoJual'])->name('pabrik.po-jual.show');

@@ -4,37 +4,52 @@
     @include('layouts.SidebarPabrik')
 
     <div class="content p-4" style="margin-left: 230px; margin-top: 60px;">
-        <h4 class="fw-bold mb-4">PO Jual</h4>
-
-        <div class="d-flex align-items-center mb-4 gap-2 flex-wrap">
-            <a href="{{ route('pabrik.po-jual.create') }}" class="btn btn-success px-4">Buat PO</a>
-            <button class="btn btn-light border">Approve</button>
-            <button class="btn btn-light border">Cancel</button>
-            <button class="btn btn-light border d-flex align-items-center">
-                <span class="me-2">📄</span> CSV
-            </button>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold">PO Penjualan</h4>
+            <a href="{{ route('pabrik.po-jual.create') }}" class="btn btn-primary">Buat PO Baru</a>
         </div>
 
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle">
-                <thead style="background-color: #f8f6f4;">
-                    <tr>
-                        <th>Sale ID</th>
-                        <th>Client ID</th>
-                        <th>Date</th>
-                        <th>Price</th>
-                        <th>Employee</th>
-                        <th>Status</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{-- Placeholder data --}}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted">No sales orders yet.</td>
-                    </tr>
-                </tbody>
-            </table>
+        @if(session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID Penjualan</th>
+                                <th>Pelanggan</th>
+                                <th>Tanggal</th>
+                                <th>Total Harga</th>
+                                <th>Karyawan</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($penjualan as $p)
+                                <tr>
+                                    <td>{{ $p->id_penjualan }}</td>
+                                    <td>{{ $p->pelanggan->nama_pelanggan }}</td>
+                                    <td>{{ $p->tanggal_penjualan }}</td>
+                                    <td>{{ number_format($p->total_harga_penjualan, 0, ',', '.') }}</td>
+                                    <td>{{ $p->karyawan->nama_karyawan }}</td>
+                                    <td>
+                                        <a href="{{ route('pabrik.po-jual.show', $p->id_penjualan) }}" class="btn btn-sm btn-info">Detail</a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center">Tidak ada data PO penjualan</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 @endsection

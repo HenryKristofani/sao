@@ -5,10 +5,23 @@
 
     <div class="content p-4" style="margin-left: 230px; margin-top: 60px;">
         <h4 class="fw-bold mb-4">Buat PO Jual</h4>
+        
+        @if(session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
+        
+        @if(session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
+            </div>
+        @endif
 
         <div class="card">
             <div class="card-body">
-                <form>
+                <form action="{{ route('pabrik.po-jual.store') }}" method="POST">
+                    @csrf
                     <div class="mb-3">
                         <label for="id_detail_sales" class="form-label">ID Detail Penjualan</label>
                         <input type="text" class="form-control bg-light" id="id_detail_sales" value="Otomatis" readonly>
@@ -21,22 +34,31 @@
 
                     <div class="mb-3">
                         <label for="item_id" class="form-label">ID Item</label>
-                        <select class="form-select" id="item_id">
+                        <select name="item_id" class="form-select" id="item_id" required>
                             <option value="">Pilih Item</option>
-                            <option value="item1">Nama Item 1</option>
-                            <option value="item2">Nama Item 2</option>
-                            <option value="item3">Nama Item 3</option>
+                            @foreach($items as $item)
+                                <option value="{{ $item->id_item }}">{{ $item->nama_item }}</option>
+                            @endforeach
                         </select>
+                        @error('item_id')
+                            <div class="text-danger">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="mb-3">
                         <label for="quantity" class="form-label">Jumlah Jual</label>
-                        <input type="number" class="form-control" id="quantity" placeholder="Masukkan Kuantitas">
+                        <input type="number" name="quantity" class="form-control" id="quantity" placeholder="Masukkan Kuantitas" required>
+                        @error('quantity')
+                            <div class="text-danger">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="mb-3">
                         <label for="unit_price" class="form-label">Harga Jual Satuan</label>
-                        <input type="text" class="form-control" id="unit_price" placeholder="Masukkan Harga Satuan">
+                        <input type="number" name="unit_price" class="form-control" id="unit_price" placeholder="Masukkan Harga Satuan" required>
+                        @error('unit_price')
+                            <div class="text-danger">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="mb-3">
@@ -46,11 +68,15 @@
 
                     <div class="mb-3">
                         <label for="customer_id" class="form-label">ID Pelanggan</label>
-                        <select class="form-select" id="customer_id">
+                        <select name="customer_id" class="form-select" id="customer_id" required>
                             <option value="">Pilih Pelanggan</option>
-                            <option value="cust1">Nama Pelanggan A</option>
-                            <option value="cust2">Nama Pelanggan B</option>
+                            @foreach($pelanggan as $p)
+                                <option value="{{ $p->id_pelanggan }}">{{ $p->nama_pelanggan }}</option>
+                            @endforeach
                         </select>
+                        @error('customer_id')
+                            <div class="text-danger">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="mb-3">
@@ -61,18 +87,23 @@
                     <div class="mb-3">
                         <label for="total_sale_price" class="form-label">Total Harga Penjualan</label>
                         <input type="text" class="form-control bg-light" id="total_sale_price" value="Otomatis" readonly>
+                        <small class="form-text text-muted">Total harga setelah diskon (jika ada)</small>
                     </div>
 
                     <div class="mb-3">
                         <label for="employee_id" class="form-label">ID Karyawan</label>
-                        <select class="form-select" id="employee_id">
+                        <select name="employee_id" class="form-select" id="employee_id" required>
                             <option value="">Pilih Karyawan</option>
-                            <option value="emp1">Nama Karyawan X</option>
-                            <option value="emp2">Nama Karyawan Y</option>
+                            @foreach($karyawan as $k)
+                                <option value="{{ $k->id_karyawan }}">{{ $k->nama_karyawan }}</option>
+                            @endforeach
                         </select>
+                        @error('employee_id')
+                            <div class="text-danger">{{ $message }}</div>
+                        @enderror
                     </div>
 
-                    <button type="button" class="btn btn-primary">Buat PO</button>
+                    <button type="submit" class="btn btn-primary">Buat PO</button>
                 </form>
             </div>
         </div>
@@ -88,8 +119,16 @@
             const quantity = parseFloat(quantityInput.value) || 0;
             const unitPrice = parseFloat(unitPriceInput.value) || 0;
             const subtotal = quantity * unitPrice;
-            subtotalPriceInput.value = subtotal.toFixed(2);
-            totalSalePriceInput.value = subtotal.toFixed(2); // Asumsi hanya satu item untuk saat ini
+            
+            // Format ke format rupiah
+            const formatter = new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            });
+            
+            subtotalPriceInput.value = formatter.format(subtotal);
+            totalSalePriceInput.value = formatter.format(subtotal); // Asumsi tidak ada diskon
         }
 
         quantityInput.addEventListener('input', calculateSubtotal);
