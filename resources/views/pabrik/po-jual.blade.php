@@ -51,6 +51,8 @@
                             <td>
                                 @if($p->status == 'draft')
                                     <span class="badge bg-warning">Draft</span>
+                                @elseif($p->status == 'canceled')
+                                    <span class="badge bg-danger">Canceled</span>
                                 @else
                                     <span class="badge bg-success">Approved</span>
                                 @endif
@@ -67,15 +69,21 @@
                                         <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Apakah Anda yakin ingin approve PO ini?')">Approve</button>
                                     </form>
                                     
-                                    <!-- Cancel Button -->
+                                    <!-- Cancel Button for Draft -->
                                     <form action="{{ route('pabrik.po-jual.cancel', $p->id_penjualan) }}" method="POST" style="display:inline;">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin ingin membatalkan PO ini?')">Cancel</button>
                                     </form>
-                                @else
+                                @elseif($p->status == 'approved')
                                     <!-- Surat Jalan Button for approved POs -->
                                     <a href="{{ route('pabrik.po-jual.surat-jalan', $p->id_penjualan) }}" class="btn btn-sm btn-primary" target="_blank">Surat Jalan</a>
+                                    
+                                    <!-- Cancel Approved PO Button -->
+                                    <form action="{{ route('pabrik.po-jual.cancel-approved', $p->id_penjualan) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin ingin membatalkan PO yang sudah diapprove?')">Cancel</button>
+                                    </form>
                                 @endif
                             </td>
                         </tr>

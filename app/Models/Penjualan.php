@@ -14,7 +14,8 @@ class Penjualan extends Model
         'id_pelanggan',
         'tanggal_penjualan',
         'total_harga_penjualan',
-        'id_karyawan'
+        'id_karyawan',
+        'status'
     ];
     
     public function pelanggan()

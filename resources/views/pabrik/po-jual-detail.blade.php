@@ -44,9 +44,14 @@
                             <dd class="col-sm-8">{{ $detailPenjualan->count() }} item</dd>
                             
                             <dt class="col-sm-4">Status</dt>
+                            <dt class="col-sm-4">Status</dt>
                             <dd class="col-sm-8">
                                 @if($isApproved)
-                                    <span class="badge bg-success">Approved</span>
+                                    @if($penjualan->status == 'canceled')
+                                        <span class="badge bg-danger">Canceled</span>
+                                    @else
+                                        <span class="badge bg-success">Approved</span>
+                                    @endif
                                 @else
                                     <span class="badge bg-warning">Draft</span>
                                 @endif

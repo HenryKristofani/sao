@@ -27,14 +27,17 @@ class PabrikController extends Controller
             // No PO number for drafts
         });
         
-        // Get approved POs
+        // Get approved and canceled POs
         $approvedPenjualan = Penjualan::with(['pelanggan', 'karyawan', 'detailPenjualan'])
             ->orderBy('id_penjualan', 'desc')
             ->get();
         
-        // Add 'status' attribute to each approved PO
+        // Ensure each PO has the correct status (don't override if already set)
         $approvedPenjualan->each(function ($item) {
-            $item->status = 'approved';
+            if (!isset($item->status) || $item->status === null) {
+                $item->status = 'approved';
+            }
+            // Keep existing status if it's already set in the database
         });
         
         // Merge both collections and sort by id_penjualan descending
@@ -353,5 +356,21 @@ class PabrikController extends Controller
         
         // Download PDF file with nice filename
         return $pdf->stream('surat-jalan-' . $poNumber . '.pdf');
+    }
+
+    public function cancelApprovedPoJual($id)
+    {
+        try {
+            // Find the approved PO
+            $penjualan = Penjualan::findOrFail($id);
+            
+            // Update status to "canceled" by adding a status column
+            $penjualan->status = 'canceled';
+            $penjualan->save();
+            
+            return redirect()->route('pabrik.po-jual')->with('success', 'PO Penjualan berhasil dibatalkan!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 }
