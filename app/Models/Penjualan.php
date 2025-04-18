@@ -36,7 +36,8 @@ class Penjualan extends Model
     // New method to get the PO number
     public function getNoPoJual()
     {
-        $detail = $this->detailPenjualan()->first();
-        return $detail ? $detail->no_po_jual : null;
+        // Get the first detail to extract the PO number
+        $firstDetail = $this->detailPenjualan()->first();
+        return $firstDetail ? $firstDetail->no_po_jual : null;
     }
 }

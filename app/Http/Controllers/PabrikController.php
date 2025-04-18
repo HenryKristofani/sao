@@ -267,26 +267,50 @@ class PabrikController extends Controller
             // Find the draft PO
             $draftPenjualan = DraftPenjualan::with('detailPenjualan')->findOrFail($id);
             
-            // Generate PO number
-            // Format: POJ-YYYYMMDD-XXX (XXX is a sequential number)
-            $today = date('Ymd');
-            $prefix = "POJ-" . date('Ymd') . "-";
+            // Check if this is an amended PO (has original_po_id)
+            $prefix = "POJ-";
+            $isAmendedPo = !empty($draftPenjualan->original_po_id);
             
-            // Get the last PO number with today's date
-            $lastPo = DetailPenjualan::where('no_po_jual', 'like', $prefix . '%')
-                ->orderBy('no_po_jual', 'desc')
-                ->first();
+            // If it's an amended PO, find the original PO number from the original PO
+            if ($isAmendedPo) {
+                $originalPo = Penjualan::findOrFail($draftPenjualan->original_po_id);
+                $originalPoNumber = $originalPo->getNoPoJual();
                 
-            if ($lastPo) {
-                // Extract the numeric part and increment
-                $lastNumber = (int)substr($lastPo->no_po_jual, -3);
-                $newNumber = $lastNumber + 1;
+                // Check if it already has amendments
+                if (strpos($originalPoNumber, '-002-') !== false) {
+                    // This is a second amendment, use 012 prefix
+                    $prefix = "POJ-012-";
+                } else {
+                    // First amendment, use 002 prefix
+                    $prefix = "POJ-002-";
+                }
+                
+                // Extract the date and sequence part from the original PO number
+                $dateAndSequence = substr($originalPoNumber, strpos($originalPoNumber, '-') + 1);
+                
+                // Generate new PO number based on original but with amendment prefix
+                $poNumber = $prefix . $dateAndSequence;
             } else {
-                $newNumber = 1;
+                // Standard PO number generation (existing code)
+                $today = date('Ymd');
+                $prefix = "POJ-" . $today . "-";
+                
+                // Get the last PO number with today's date
+                $lastPo = DetailPenjualan::where('no_po_jual', 'like', $prefix . '%')
+                    ->orderBy('no_po_jual', 'desc')
+                    ->first();
+                    
+                if ($lastPo) {
+                    // Extract the numeric part and increment
+                    $lastNumber = (int)substr($lastPo->no_po_jual, -3);
+                    $newNumber = $lastNumber + 1;
+                } else {
+                    $newNumber = 1;
+                }
+                
+                // Format with leading zeros
+                $poNumber = $prefix . sprintf('%03d', $newNumber);
             }
-            
-            // Format with leading zeros
-            $poNumber = $prefix . sprintf('%03d', $newNumber);
             
             // Create new Penjualan record
             $penjualan = new Penjualan();
@@ -294,6 +318,10 @@ class PabrikController extends Controller
             $penjualan->tanggal_penjualan = $draftPenjualan->tanggal_penjualan;
             $penjualan->total_harga_penjualan = $draftPenjualan->total_harga_penjualan;
             $penjualan->id_karyawan = $draftPenjualan->id_karyawan;
+            // If this is an amended PO, set reference to original
+            if ($isAmendedPo) {
+                $penjualan->original_po_id = $draftPenjualan->original_po_id;
+            }
             $penjualan->save();
             
             // Get all detail items
@@ -388,4 +416,55 @@ class PabrikController extends Controller
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
+
+    public function editApprovedPoJual($id)
+    {
+        try {
+            // Find the approved PO
+            $penjualan = Penjualan::findOrFail($id);
+            
+            // Begin transaction
+            DB::beginTransaction();
+            
+            // 1. Change the status to "amended"
+            $penjualan->status = 'amended';
+            $penjualan->save();
+            
+            // 2. Create a draft copy of the PO
+            $draftPenjualan = new DraftPenjualan();
+            $draftPenjualan->id_pelanggan = $penjualan->id_pelanggan;
+            $draftPenjualan->tanggal_penjualan = date('Y-m-d'); // Current date for the new draft
+            $draftPenjualan->total_harga_penjualan = $penjualan->total_harga_penjualan;
+            $draftPenjualan->id_karyawan = $penjualan->id_karyawan;
+            $draftPenjualan->original_po_id = $id; // Reference to the original PO
+            $draftPenjualan->save();
+            
+            // Get all detail items from the approved PO
+            $detailItems = DetailPenjualan::where('id_penjualan', $id)->get();
+            
+            // Create draft detail records
+            foreach ($detailItems as $item) {
+                $draftDetailPenjualan = new DraftDetailPenjualan();
+                $draftDetailPenjualan->id_penjualan = $draftPenjualan->id_penjualan;
+                $draftDetailPenjualan->id_item = $item->id_item;
+                $draftDetailPenjualan->jumlah_jual = $item->jumlah_jual;
+                $draftDetailPenjualan->harga_jual_satuan = $item->harga_jual_satuan;
+                $draftDetailPenjualan->subtotal_harga = $item->subtotal_harga;
+                $draftDetailPenjualan->original_po_detail_id = $item->id_detail_penjualan; // Reference to original detail
+                $draftDetailPenjualan->save();
+            }
+            
+            DB::commit();
+            
+            // Redirect to edit page with the new draft ID
+            return redirect()->route('pabrik.po-jual.edit', $draftPenjualan->id_penjualan)
+                ->with('success', 'PO Penjualan yang sudah diapprove sedang diedit. Perubahan akan disimpan sebagai PO Draft baru.');
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Terjadi kesalahan saat mengedit PO yang sudah diapprove: ' . $e->getMessage());
+        }
+    }
+    
+
 }

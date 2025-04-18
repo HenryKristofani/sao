@@ -36,7 +36,7 @@
                     @forelse($penjualan as $p)
                         <tr>
                         <td>
-                            @if($p->status == 'approved' || $p->status == 'canceled')
+                            @if($p->status == 'approved' || $p->status == 'canceled' || $p->status == 'amended')
                                 {{ $p->getNoPoJual() }}
                             @else
                                 <span class="text-muted">-</span>
@@ -53,6 +53,8 @@
                                     <span class="badge bg-warning">Draft</span>
                                 @elseif($p->status == 'canceled')
                                     <span class="badge bg-danger">Canceled</span>
+                                @elseif($p->status == 'amended')
+                                    <span class="badge bg-info">Amended</span>
                                 @else
                                     <span class="badge bg-success">Approved</span>
                                 @endif
@@ -76,6 +78,9 @@
                                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin ingin membatalkan PO ini?')">Cancel</button>
                                     </form>
                                 @elseif($p->status == 'approved')
+                                    <!-- Edit Button for approved POs -->
+                                    <a href="{{ route('pabrik.po-jual.edit-approved', $p->id_penjualan) }}" class="btn btn-sm btn-warning" onclick="return confirm('Mengedit PO yang sudah diapprove akan mengubah status PO ini menjadi Amended dan membuat draft PO baru. Lanjutkan?')">Edit</a>
+                                    
                                     <!-- Surat Jalan Button for approved POs -->
                                     <a href="{{ route('pabrik.po-jual.surat-jalan', $p->id_penjualan) }}" class="btn btn-sm btn-primary" target="_blank">Surat Jalan</a>
                                     
@@ -86,6 +91,8 @@
                                     </form>
                                 @elseif($p->status == 'canceled')
                                     <!-- No action buttons for canceled POs -->
+                                @elseif($p->status == 'amended')
+                                    <!-- No action buttons for amended POs -->
                                 @endif
                             </td>
                         </tr>
