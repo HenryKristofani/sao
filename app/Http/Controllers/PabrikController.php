@@ -364,9 +364,24 @@ class PabrikController extends Controller
             // Find the approved PO
             $penjualan = Penjualan::findOrFail($id);
             
-            // Update status to "canceled" by adding a status column
+            // Update status to "canceled"
             $penjualan->status = 'canceled';
             $penjualan->save();
+            
+            // Get all detail items and update the PO number
+            $detailPenjualan = DetailPenjualan::where('id_penjualan', $id)->get();
+            
+            foreach ($detailPenjualan as $detail) {
+                // Get current PO number
+                $currentPoNumber = $detail->no_po_jual;
+                
+                // Insert "003" after "POJ"
+                $newPoNumber = substr_replace($currentPoNumber, "003-", 4, 0);
+                
+                // Update PO number
+                $detail->no_po_jual = $newPoNumber;
+                $detail->save();
+            }
             
             return redirect()->route('pabrik.po-jual')->with('success', 'PO Penjualan berhasil dibatalkan!');
         } catch (\Exception $e) {

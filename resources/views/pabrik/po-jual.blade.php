@@ -35,13 +35,13 @@
                     <tbody>
                     @forelse($penjualan as $p)
                         <tr>
-                            <td>
-                                @if($p->status == 'approved')
-                                    {{ $p->getNoPoJual() }}
-                                @else
-                                    <span class="text-muted">-</span>
-                                @endif
-                            </td>
+                        <td>
+                            @if($p->status == 'approved' || $p->status == 'canceled')
+                                {{ $p->getNoPoJual() }}
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
                             <td>{{ $p->id_penjualan }}</td>
                             <td>{{ $p->pelanggan->nama_pelanggan }}</td>
                             <td>{{ $p->tanggal_penjualan }}</td>
@@ -84,6 +84,8 @@
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin ingin membatalkan PO yang sudah diapprove?')">Cancel</button>
                                     </form>
+                                @elseif($p->status == 'canceled')
+                                    <!-- No action buttons for canceled POs -->
                                 @endif
                             </td>
                         </tr>
