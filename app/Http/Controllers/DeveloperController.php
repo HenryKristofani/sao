@@ -30,7 +30,7 @@ class DeveloperController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
-            'role' => 'required|in:kantor,pabrik'
+            'role' => 'required|in:kantor,pabrik,owner'
         ]);
     
         User::create([
@@ -108,7 +108,7 @@ class DeveloperController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
-            'role' => 'required|in:kantor,pabrik',
+            'role' => 'required|in:kantor,pabrik,owner',
             'password' => 'nullable|min:6'
         ]);
     

@@ -18,6 +18,7 @@ class RoleRedirect {
             'developer' => redirect('/developer'),
             'kantor' => redirect('/kantor'),
             'pabrik' => redirect('/pabrik'),
+            'owner' => redirect('/owner'),
             default => redirect('/login')
         };
     }

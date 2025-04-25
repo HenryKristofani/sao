@@ -28,6 +28,7 @@ Route::get('/redirect', function (Request $request) {
         'developer' => redirect('/developer'),
         'kantor' => redirect('/kantor'),
         'pabrik' => redirect('/pabrik'),
+        'owner' => redirect('/owner'),
         default => redirect('/login')
     };
 });
@@ -53,6 +54,13 @@ Route::get('/pabrik', function () {
     }
     return redirect('/login');
 })->name('pabrik');
+
+Route::get('/owner', function () {
+    if (Auth::check() && Auth::user()->role === 'owner') {
+        return view('owner');
+    }
+    return redirect('/login');
+})->name('owner');
 
 // Developer route group
 Route::middleware(['auth'])->group(function () {

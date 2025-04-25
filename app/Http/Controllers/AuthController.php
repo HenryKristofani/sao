@@ -45,7 +45,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required|min:6|confirmed',
-            'role' => 'required|in:kantor,pabrik'
+            'role' => 'required|in:kantor,pabrik,owner'
         ]);
 
         User::create([

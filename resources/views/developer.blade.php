@@ -28,6 +28,7 @@
                     <select name="role" class="form-control" required>
                         <option value="kantor">Kantor</option>
                         <option value="pabrik">Pabrik</option>
+                        <option value="pabrik">Owner</option>
                     </select>
                 </div>
                 <div class="mb-3">

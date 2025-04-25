@@ -28,6 +28,13 @@ class UserSeeder extends Seeder {
             'password' => Hash::make('password'),
             'role' => 'pabrik'
         ]);
+
+        User::create([
+            'name' => 'Owner User',
+            'email' => 'owner@test.com',
+            'password' => Hash::make('password'),
+            'role' => 'owner'
+        ]);
     }
 }
 

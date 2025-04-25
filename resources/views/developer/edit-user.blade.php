@@ -40,6 +40,7 @@
         <select name="role" class="form-control" required>
             <option value="kantor" {{ $user->role == 'kantor' ? 'selected' : '' }}>Kantor</option>
             <option value="pabrik" {{ $user->role == 'pabrik' ? 'selected' : '' }}>Pabrik</option>
+            <option value="owner" {{ $user->role == 'owner' ? 'selected' : '' }}>Owner</option>
         </select>
     </div>
 
