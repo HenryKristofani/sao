@@ -268,61 +268,85 @@ class PabrikController extends Controller
             $draftPenjualan = DraftPenjualan::with('detailPenjualan')->findOrFail($id);
             
             // Check if this is an amended PO (has original_po_id)
-            $prefix = "POJ-";
             $isAmendedPo = !empty($draftPenjualan->original_po_id);
             
-            // If it's an amended PO, find the original PO number from the original PO
+            // If it's an amended PO, handle amendment numbering
             if ($isAmendedPo) {
                 $originalPo = Penjualan::findOrFail($draftPenjualan->original_po_id);
                 $originalPoNumber = $originalPo->getNoPoJual();
                 
-                // Extract the amendment level from the original PO number
-                if (preg_match('/POJ-(\d{3})-/', $originalPoNumber, $matches)) {
-                    // Get the current amendment number and increment by 10
-                    $currentAmendment = (int)$matches[1];
-                    $newAmendment = $currentAmendment + 10;
-                    $prefix = "POJ-" . sprintf('%03d', $newAmendment) . "-";
-                } else {
-                    // First amendment, use 002 prefix
-                    $prefix = "POJ-002-";
-                }
-                
-                // Extract the date and sequence part from the original PO number
+                // Extract the parts of the original PO number
                 $parts = explode('-', $originalPoNumber);
-                // If this is a regular PO (POJ-20250426-001), we need the date and sequence
-                if (count($parts) === 3) {
-                    $dateAndSequence = $parts[1] . '-' . $parts[2];
-                } 
-                // If this is already an amended PO (POJ-002-20250426-001), we need the date and sequence
-                else if (count($parts) === 4) {
-                    $dateAndSequence = $parts[2] . '-' . $parts[3];
-                } else {
-                    // Fallback to current date and 001 sequence
-                    $dateAndSequence = date('Ymd') . '-001';
+                
+                // Get date and sequence from original PO
+                $date = "";
+                $sequence = "";
+                
+                // Extract date and sequence based on PO format
+                if (count($parts) >= 3) {
+                    if ($parts[0] === "POJ") {
+                        // Handle different PO formats
+                        if ($parts[1] === "001" || $parts[1] === "002" || $parts[1] === "003" || 
+                            $parts[1] === "012" || $parts[1] === "022" || $parts[1] === "032") {
+                            // Format is POJ-XXX-YYYYMMDD-N
+                            $date = $parts[2];
+                            $sequence = $parts[3];
+                        } else {
+                            // Format is POJ-YYYYMMDD-N
+                            $date = $parts[1];
+                            $sequence = $parts[2];
+                        }
+                    }
                 }
                 
-                // Generate new PO number based on original but with amendment prefix
-                $poNumber = $prefix . $dateAndSequence;
+                // If we couldn't extract date/sequence, use default values
+                if (empty($date) || empty($sequence)) {
+                    $date = date('Ymd');
+                    $sequence = "1";
+                }
+                
+                // Determine next amendment number based on current PO number
+                if ($parts[0] === "POJ") {
+                    if ($parts[1] === "001") {
+                        // First original PO -> first amendment
+                        $poNumber = "POJ-002-" . $date . "-" . $sequence;
+                    } else if ($parts[1] === "002") {
+                        // First amendment -> second amendment
+                        $poNumber = "POJ-012-" . $date . "-" . $sequence;
+                    } else if ($parts[1] === "012") {
+                        // Second amendment -> third amendment
+                        $poNumber = "POJ-022-" . $date . "-" . $sequence;
+                    } else if ($parts[1] === "022") {
+                        // Third amendment -> fourth amendment
+                        $poNumber = "POJ-032-" . $date . "-" . $sequence;
+                    } else {
+                        // Default to first amendment if pattern doesn't match
+                        $poNumber = "POJ-002-" . $date . "-" . $sequence;
+                    }
+                } else {
+                    // If format is completely different, use default
+                    $poNumber = "POJ-002-" . $date . "-" . $sequence;
+                }
             } else {
-                // Standard PO number generation (existing code)
+                // This is a new PO, not an amendment
                 $today = date('Ymd');
-                $prefix = "POJ-" . $today . "-";
                 
                 // Get the last PO number with today's date
-                $lastPo = DetailPenjualan::where('no_po_jual', 'like', $prefix . '%')
+                $lastPo = DetailPenjualan::where('no_po_jual', 'like', 'POJ-001-' . $today . '-%')
                     ->orderBy('no_po_jual', 'desc')
                     ->first();
                     
+                $sequence = 1;
                 if ($lastPo) {
-                    // Extract the numeric part and increment
-                    $lastNumber = (int)substr($lastPo->no_po_jual, -3);
-                    $newNumber = $lastNumber + 1;
-                } else {
-                    $newNumber = 1;
+                    // Extract the sequence number and increment
+                    $parts = explode('-', $lastPo->no_po_jual);
+                    if (count($parts) >= 4) {
+                        $sequence = (int)$parts[3] + 1;
+                    }
                 }
                 
-                // Format with leading zeros
-                $poNumber = $prefix . sprintf('%03d', $newNumber);
+                // Format as POJ-001-YYYYMMDD-N
+                $poNumber = "POJ-001-" . $today . "-" . $sequence;
             }
             
             // Create new Penjualan record
@@ -365,6 +389,8 @@ class PabrikController extends Controller
             return back()->with('error', 'Terjadi kesalahan saat approve: ' . $e->getMessage());
         }
     }
+    
+    
 
     public function generateSuratJalan($id)
     {
@@ -416,8 +442,20 @@ class PabrikController extends Controller
                 // Get current PO number
                 $currentPoNumber = $detail->no_po_jual;
                 
-                // Insert "003" after "POJ"
-                $newPoNumber = substr_replace($currentPoNumber, "003-", 4, 0);
+                // Parse PO number parts
+                $parts = explode('-', $currentPoNumber);
+                
+                // Create canceled PO number using format POJ-003-YYYYMMDD-N
+                if (count($parts) >= 4) {
+                    // Standard format: POJ-XXX-YYYYMMDD-N
+                    $newPoNumber = "POJ-003-" . $parts[2] . "-" . $parts[3];
+                } else if (count($parts) === 3) {
+                    // Old format: POJ-YYYYMMDD-N
+                    $newPoNumber = "POJ-003-" . $parts[1] . "-" . $parts[2];
+                } else {
+                    // Fallback if format is unexpected
+                    $newPoNumber = "POJ-003-" . date('Ymd') . "-1";
+                }
                 
                 // Update PO number
                 $detail->no_po_jual = $newPoNumber;
