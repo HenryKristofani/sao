@@ -276,17 +276,30 @@ class PabrikController extends Controller
                 $originalPo = Penjualan::findOrFail($draftPenjualan->original_po_id);
                 $originalPoNumber = $originalPo->getNoPoJual();
                 
-                // Check if it already has amendments
-                if (strpos($originalPoNumber, '-002-') !== false) {
-                    // This is a second amendment, use 012 prefix
-                    $prefix = "POJ-012-";
+                // Extract the amendment level from the original PO number
+                if (preg_match('/POJ-(\d{3})-/', $originalPoNumber, $matches)) {
+                    // Get the current amendment number and increment by 10
+                    $currentAmendment = (int)$matches[1];
+                    $newAmendment = $currentAmendment + 10;
+                    $prefix = "POJ-" . sprintf('%03d', $newAmendment) . "-";
                 } else {
                     // First amendment, use 002 prefix
                     $prefix = "POJ-002-";
                 }
                 
                 // Extract the date and sequence part from the original PO number
-                $dateAndSequence = substr($originalPoNumber, strpos($originalPoNumber, '-') + 1);
+                $parts = explode('-', $originalPoNumber);
+                // If this is a regular PO (POJ-20250426-001), we need the date and sequence
+                if (count($parts) === 3) {
+                    $dateAndSequence = $parts[1] . '-' . $parts[2];
+                } 
+                // If this is already an amended PO (POJ-002-20250426-001), we need the date and sequence
+                else if (count($parts) === 4) {
+                    $dateAndSequence = $parts[2] . '-' . $parts[3];
+                } else {
+                    // Fallback to current date and 001 sequence
+                    $dateAndSequence = date('Ymd') . '-001';
+                }
                 
                 // Generate new PO number based on original but with amendment prefix
                 $poNumber = $prefix . $dateAndSequence;
