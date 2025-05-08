@@ -84,6 +84,9 @@
                                     <!-- Surat Jalan Button for approved POs -->
                                     <a href="{{ route('pabrik.po-jual.surat-jalan', $p->id_penjualan) }}" class="btn btn-sm btn-primary" target="_blank">Surat Jalan</a>
                                     
+                                    <!-- Invoice Button for approved POs -->
+                                    <a href="{{ route('pabrik.po-jual.invoice', $p->id_penjualan) }}" class="btn btn-sm btn-success" target="_blank">Invoice</a>
+                                    
                                     <!-- Cancel Approved PO Button -->
                                     <form action="{{ route('pabrik.po-jual.cancel-approved', $p->id_penjualan) }}" method="POST" style="display:inline;">
                                         @csrf

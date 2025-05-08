@@ -425,6 +425,47 @@ class PabrikController extends Controller
         return $pdf->stream('surat-jalan-' . $poNumber . '.pdf');
     }
 
+    public function generateInvoice($id)
+    {
+        // Find the approved PO with relations
+        $penjualan = Penjualan::with(['pelanggan', 'karyawan', 'detailPenjualan.item'])
+            ->where('id_penjualan', $id)
+            ->firstOrFail();
+            
+        // Check if the PO is approved - only generate invoice for approved POs
+        if ($penjualan->status !== 'approved') {
+            return back()->with('error', 'Invoice hanya dapat dibuat untuk PO yang sudah diapprove.');
+        }
+        
+        // Get the PO number from the first detail
+        $poNumber = $penjualan->getNoPoJual();
+        
+        if (!$poNumber) {
+            return back()->with('error', 'Tidak dapat menemukan nomor PO untuk penjualan ini.');
+        }
+        
+        // Prepare data for PDF
+        $data = [
+            'penjualan' => $penjualan,
+            'poNumber' => $poNumber,
+            'tanggal' => date('d-m-Y'),
+            'nomor' => 'INV/' . date('Ymd') . '/' . sprintf('%04d', $id),
+            'details' => $penjualan->detailPenjualan,
+            'subtotal' => $penjualan->total_harga_penjualan,
+            'ppn' => $penjualan->total_harga_penjualan * 0.11, // 11% PPN
+            'total' => $penjualan->total_harga_penjualan * 1.11 // Total + PPN
+        ];
+        
+        // Load PDF view (you'll need to create this view)
+        $pdf = \PDF::loadView('pabrik.invoice-pdf', $data);
+        
+        // Set paper size
+        $pdf->setPaper('a4', 'portrait');
+        
+        // Download PDF file with nice filename
+        return $pdf->stream('invoice-' . $poNumber . '.pdf');
+    }
+
     public function cancelApprovedPoJual($id)
     {
         try {
@@ -516,6 +557,4 @@ class PabrikController extends Controller
             return back()->with('error', 'Terjadi kesalahan saat mengedit PO yang sudah diapprove: ' . $e->getMessage());
         }
     }
-    
-
 }
