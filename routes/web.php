@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DeveloperController;
 use App\Http\Controllers\PabrikController;
+use App\Http\Controllers\ItemsController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -95,3 +96,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/pabrik/po-jual/{id}/cancel-approved', [PabrikController::class, 'cancelApprovedPoJual'])->name('pabrik.po-jual.cancel-approved');
     Route::get('/pabrik/po-jual/{id}/edit-approved', [PabrikController::class, 'editApprovedPoJual'])->name('pabrik.po-jual.edit-approved');
 });
+
+// Rute Items Pabrik
+Route::middleware(['auth'])->group(function () {
+    Route::get('/pabrik/item', [ItemsController::class, 'index'])->name('pabrik.item');
+});
+
