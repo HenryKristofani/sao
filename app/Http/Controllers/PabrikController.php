@@ -374,6 +374,9 @@ class PabrikController extends Controller
                 $detailPenjualan->harga_jual_satuan = $item->harga_jual_satuan;
                 $detailPenjualan->subtotal_harga = $item->subtotal_harga;
                 $detailPenjualan->save();
+                
+                // Update item quantity (reduce stock) - ONLY for approved POs
+                $this->updateItemQuantity($item->id_item, $item->jumlah_jual, 'decrease');
             }
             
             // Delete draft records after successful transfer
@@ -390,7 +393,37 @@ class PabrikController extends Controller
         }
     }
     
-    
+    /**
+     * Helper function to update item quantity
+     * 
+     * @param int $itemId The item ID
+     * @param int $quantity The quantity to update
+     * @param string $operation 'increase' or 'decrease'
+     * @return bool Success status
+     */
+    private function updateItemQuantity($itemId, $quantity, $operation = 'decrease')
+    {
+        try {
+            $item = Item::findOrFail($itemId);
+            
+            if ($operation === 'decrease') {
+                // Check if we have enough stock
+                if ($item->jumlah_item < $quantity) {
+                    throw new \Exception("Stok tidak mencukupi untuk item: " . $item->nama_item);
+                }
+                
+                $item->jumlah_item -= $quantity;
+            } else {
+                // Increase quantity
+                $item->jumlah_item += $quantity;
+            }
+            
+            $item->save();
+            return true;
+        } catch (\Exception $e) {
+            throw $e;
+        }
+    }
 
     public function generateSuratJalan($id)
     {
@@ -469,6 +502,9 @@ class PabrikController extends Controller
     public function cancelApprovedPoJual($id)
     {
         try {
+            // Begin transaction
+            DB::beginTransaction();
+            
             // Find the approved PO
             $penjualan = Penjualan::findOrFail($id);
             
@@ -501,10 +537,16 @@ class PabrikController extends Controller
                 // Update PO number
                 $detail->no_po_jual = $newPoNumber;
                 $detail->save();
+                
+                // Restore the item quantity since PO is canceled
+                $this->updateItemQuantity($detail->id_item, $detail->jumlah_jual, 'increase');
             }
+            
+            DB::commit();
             
             return redirect()->route('pabrik.po-jual')->with('success', 'PO Penjualan berhasil dibatalkan!');
         } catch (\Exception $e) {
+            DB::rollback();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -512,15 +554,23 @@ class PabrikController extends Controller
     public function editApprovedPoJual($id)
     {
         try {
+            // Begin transaction
+            DB::beginTransaction();
+            
             // Find the approved PO
             $penjualan = Penjualan::findOrFail($id);
             
-            // Begin transaction
-            DB::beginTransaction();
+            // Get the details to restore item quantities
+            $detailPenjualan = DetailPenjualan::where('id_penjualan', $id)->get();
             
             // 1. Change the status to "amended"
             $penjualan->status = 'amended';
             $penjualan->save();
+            
+            // Restore item quantities for the amended PO
+            foreach ($detailPenjualan as $detail) {
+                $this->updateItemQuantity($detail->id_item, $detail->jumlah_jual, 'increase');
+            }
             
             // 2. Create a draft copy of the PO
             $draftPenjualan = new DraftPenjualan();
@@ -532,7 +582,7 @@ class PabrikController extends Controller
             $draftPenjualan->save();
             
             // Get all detail items from the approved PO
-            $detailItems = DetailPenjualan::where('id_penjualan', $id)->get();
+            $detailItems = $detailPenjualan;
             
             // Create draft detail records
             foreach ($detailItems as $item) {
