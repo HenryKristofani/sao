@@ -11,10 +11,10 @@
 
     <ul style="list-style: none; padding: 0; margin: 0;">
         <li style="margin: 5px 0;">
-        <a href="{{ route('pabrik.po-jual') }}"
-   class="d-flex align-items-center px-3 py-2 text-decoration-none {{ Request::is('pabrik/po-jual*') ? 'fw-bold text-primary' : 'text-dark' }}">
-    <span class="me-2">📊</span> PO Jual
-</a>
+            <a href="{{ route('pabrik.po-jual') }}"
+               class="d-flex align-items-center px-3 py-2 text-decoration-none {{ Request::is('pabrik/po-jual*') ? 'fw-bold text-primary' : 'text-dark' }}">
+                <span class="me-2">📊</span> PO Jual
+            </a>
         </li>
         <li style="margin: 5px 0;">
             <a href="#"
@@ -32,6 +32,12 @@
             <a href="{{ route('pabrik.item') }}"
                class="d-flex align-items-center px-3 py-2 text-decoration-none {{ Request::is('pabrik/item*') ? 'fw-bold text-primary' : 'text-dark' }}">
                 <span class="me-2">📦</span> Item
+            </a>
+        </li>
+        <li style="margin: 5px 0;">
+            <a href="{{ route('pabrik.pelanggan') }}"
+               class="d-flex align-items-center px-3 py-2 text-decoration-none {{ Request::is('pabrik/pelanggan*') ? 'fw-bold text-primary' : 'text-dark' }}">
+                <span class="me-2">👥</span> Pelanggan
             </a>
         </li>
         <li style="margin: 5px 0;">

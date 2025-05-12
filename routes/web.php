@@ -7,6 +7,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DeveloperController;
 use App\Http\Controllers\PabrikController;
 use App\Http\Controllers\ItemsController;
+use App\Http\Controllers\ClientsController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -100,5 +101,11 @@ Route::middleware(['auth'])->group(function () {
 // Rute Items Pabrik
 Route::middleware(['auth'])->group(function () {
     Route::get('/pabrik/item', [ItemsController::class, 'index'])->name('pabrik.item');
-});
 
+    // Rute Pelanggan Pabrik
+    Route::get('/pabrik/pelanggan', [ClientsController::class, 'index'])->name('pabrik.pelanggan');
+    Route::post('/pabrik/pelanggan', [ClientsController::class, 'store'])->name('pabrik.pelanggan.store');
+    Route::get('/pabrik/pelanggan/{id}/edit', [ClientsController::class, 'edit'])->name('pabrik.pelanggan.edit');
+    Route::put('/pabrik/pelanggan/{id}', [ClientsController::class, 'update'])->name('pabrik.pelanggan.update');
+    Route::delete('/pabrik/pelanggan/{id}', [ClientsController::class, 'destroy'])->name('pabrik.pelanggan.destroy');
+});
