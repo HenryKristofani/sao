@@ -258,140 +258,186 @@ class PabrikController extends Controller
         }
     }
 
-    public function approvePoJual($id)
-    {
-        // Begin transaction
-        DB::beginTransaction();
+public function approvePoJual($id)
+{
+    // Begin transaction
+    DB::beginTransaction();
+    
+    try {
+        // Find the draft PO
+        $draftPenjualan = DraftPenjualan::with('detailPenjualan')->findOrFail($id);
         
-        try {
-            // Find the draft PO
-            $draftPenjualan = DraftPenjualan::with('detailPenjualan')->findOrFail($id);
+        // Check if this is an amended PO (has original_po_id)
+        $isAmendedPo = !empty($draftPenjualan->original_po_id);
+        
+        // If it's an amended PO, handle amendment numbering
+        if ($isAmendedPo) {
+            $originalPo = Penjualan::findOrFail($draftPenjualan->original_po_id);
+            $originalPoNumber = $originalPo->getNoPoJual();
             
-            // Check if this is an amended PO (has original_po_id)
-            $isAmendedPo = !empty($draftPenjualan->original_po_id);
+            // Extract the parts of the original PO number
+            $parts = explode('-', $originalPoNumber);
             
-            // If it's an amended PO, handle amendment numbering
-            if ($isAmendedPo) {
-                $originalPo = Penjualan::findOrFail($draftPenjualan->original_po_id);
-                $originalPoNumber = $originalPo->getNoPoJual();
-                
-                // Extract the parts of the original PO number
-                $parts = explode('-', $originalPoNumber);
-                
-                // Get date and sequence from original PO
-                $date = "";
-                $sequence = "";
-                
-                // Extract date and sequence based on PO format
-                if (count($parts) >= 3) {
-                    if ($parts[0] === "POJ") {
-                        // Handle different PO formats
-                        if ($parts[1] === "001" || $parts[1] === "002" || $parts[1] === "003" || 
-                            $parts[1] === "012" || $parts[1] === "022" || $parts[1] === "032") {
-                            // Format is POJ-XXX-YYYYMMDD-N
-                            $date = $parts[2];
-                            $sequence = $parts[3];
-                        } else {
-                            // Format is POJ-YYYYMMDD-N
-                            $date = $parts[1];
-                            $sequence = $parts[2];
-                        }
-                    }
-                }
-                
-                // If we couldn't extract date/sequence, use default values
-                if (empty($date) || empty($sequence)) {
-                    $date = date('Ymd');
-                    $sequence = "1";
-                }
-                
-                // Determine next amendment number based on current PO number
+            // Get date and sequence from original PO
+            $date = "";
+            $sequence = "";
+            
+            // Extract date and sequence based on PO format
+            if (count($parts) >= 3) {
                 if ($parts[0] === "POJ") {
-                    if ($parts[1] === "001") {
-                        // First original PO -> first amendment
-                        $poNumber = "POJ-002-" . $date . "-" . $sequence;
-                    } else if ($parts[1] === "002") {
-                        // First amendment -> second amendment
-                        $poNumber = "POJ-012-" . $date . "-" . $sequence;
-                    } else if ($parts[1] === "012") {
-                        // Second amendment -> third amendment
-                        $poNumber = "POJ-022-" . $date . "-" . $sequence;
-                    } else if ($parts[1] === "022") {
-                        // Third amendment -> fourth amendment
-                        $poNumber = "POJ-032-" . $date . "-" . $sequence;
+                    // Handle different PO formats
+                    if ($parts[1] === "001" || $parts[1] === "002" || $parts[1] === "003" || 
+                        $parts[1] === "012" || $parts[1] === "022" || $parts[1] === "032") {
+                        // Format is POJ-XXX-YYYYMMDD-N
+                        $date = $parts[2];
+                        $sequence = $parts[3];
                     } else {
-                        // Default to first amendment if pattern doesn't match
-                        $poNumber = "POJ-002-" . $date . "-" . $sequence;
+                        // Format is POJ-YYYYMMDD-N
+                        $date = $parts[1];
+                        $sequence = $parts[2];
                     }
+                }
+            }
+            
+            // If we couldn't extract date/sequence, use default values
+            if (empty($date) || empty($sequence)) {
+                $date = date('Ymd');
+                $sequence = "1";
+            }
+            
+            // Determine next amendment number based on current PO number
+            if ($parts[0] === "POJ") {
+                if ($parts[1] === "001") {
+                    // First original PO -> first amendment
+                    $poNumber = "POJ-002-" . $date . "-" . $sequence;
+                } else if ($parts[1] === "002") {
+                    // First amendment -> second amendment
+                    $poNumber = "POJ-012-" . $date . "-" . $sequence;
+                } else if ($parts[1] === "012") {
+                    // Second amendment -> third amendment
+                    $poNumber = "POJ-022-" . $date . "-" . $sequence;
+                } else if ($parts[1] === "022") {
+                    // Third amendment -> fourth amendment
+                    $poNumber = "POJ-032-" . $date . "-" . $sequence;
                 } else {
-                    // If format is completely different, use default
+                    // Default to first amendment if pattern doesn't match
                     $poNumber = "POJ-002-" . $date . "-" . $sequence;
                 }
             } else {
-                // This is a new PO, not an amendment
-                $today = date('Ymd');
+                // If format is completely different, use default
+                $poNumber = "POJ-002-" . $date . "-" . $sequence;
+            }
+        } else {
+            // This is a new PO, not an amendment
+            $today = date('Ymd');
+            
+            // Get the last PO number with today's date
+            $lastPo = DetailPenjualan::where('no_po_jual', 'like', 'POJ-001-' . $today . '-%')
+                ->orderBy('no_po_jual', 'desc')
+                ->first();
                 
-                // Get the last PO number with today's date
-                $lastPo = DetailPenjualan::where('no_po_jual', 'like', 'POJ-001-' . $today . '-%')
-                    ->orderBy('no_po_jual', 'desc')
-                    ->first();
-                    
-                $sequence = 1;
-                if ($lastPo) {
-                    // Extract the sequence number and increment
-                    $parts = explode('-', $lastPo->no_po_jual);
-                    if (count($parts) >= 4) {
-                        $sequence = (int)$parts[3] + 1;
-                    }
+            $sequence = 1;
+            if ($lastPo) {
+                // Extract the sequence number and increment
+                $parts = explode('-', $lastPo->no_po_jual);
+                if (count($parts) >= 4) {
+                    $sequence = (int)$parts[3] + 1;
                 }
-                
-                // Format as POJ-001-YYYYMMDD-N
-                $poNumber = "POJ-001-" . $today . "-" . $sequence;
             }
             
-            // Create new Penjualan record
-            $penjualan = new Penjualan();
-            $penjualan->id_pelanggan = $draftPenjualan->id_pelanggan;
-            $penjualan->tanggal_penjualan = $draftPenjualan->tanggal_penjualan;
-            $penjualan->total_harga_penjualan = $draftPenjualan->total_harga_penjualan;
-            $penjualan->id_karyawan = $draftPenjualan->id_karyawan;
-            // If this is an amended PO, set reference to original
-            if ($isAmendedPo) {
-                $penjualan->original_po_id = $draftPenjualan->original_po_id;
-            }
-            $penjualan->save();
-            
-            // Get all detail items
-            $detailItems = DraftDetailPenjualan::where('id_penjualan', $id)->get();
-            
-            // Create detail records
-            foreach ($detailItems as $item) {
-                $detailPenjualan = new DetailPenjualan();
-                $detailPenjualan->id_penjualan = $penjualan->id_penjualan;
-                $detailPenjualan->no_po_jual = $poNumber; // Add PO number
-                $detailPenjualan->id_item = $item->id_item;
-                $detailPenjualan->jumlah_jual = $item->jumlah_jual;
-                $detailPenjualan->harga_jual_satuan = $item->harga_jual_satuan;
-                $detailPenjualan->subtotal_harga = $item->subtotal_harga;
-                $detailPenjualan->save();
-                
-                // Update item quantity (reduce stock) - ONLY for approved POs
-                $this->updateItemQuantity($item->id_item, $item->jumlah_jual, 'decrease');
-            }
-            
-            // Delete draft records after successful transfer
-            DraftDetailPenjualan::where('id_penjualan', $id)->delete();
-            $draftPenjualan->delete();
-            
-            DB::commit();
-            
-            return redirect()->route('pabrik.po-jual')->with('success', 'PO Penjualan berhasil diapprove!');
-            
-        } catch (\Exception $e) {
-            DB::rollback();
-            return back()->with('error', 'Terjadi kesalahan saat approve: ' . $e->getMessage());
+            // Format as POJ-001-YYYYMMDD-N
+            $poNumber = "POJ-001-" . $today . "-" . $sequence;
         }
+        
+        // Create new Penjualan record
+        $penjualan = new Penjualan();
+        $penjualan->id_pelanggan = $draftPenjualan->id_pelanggan;
+        $penjualan->tanggal_penjualan = $draftPenjualan->tanggal_penjualan;
+        $penjualan->total_harga_penjualan = $draftPenjualan->total_harga_penjualan;
+        $penjualan->id_karyawan = $draftPenjualan->id_karyawan;
+        // If this is an amended PO, set reference to original
+        if ($isAmendedPo) {
+            $penjualan->original_po_id = $draftPenjualan->original_po_id;
+        }
+        $penjualan->save();
+        
+        // Get all detail items
+        $detailItems = DraftDetailPenjualan::where('id_penjualan', $id)->get();
+        
+        // Create detail records
+        foreach ($detailItems as $item) {
+            $detailPenjualan = new DetailPenjualan();
+            $detailPenjualan->id_penjualan = $penjualan->id_penjualan;
+            $detailPenjualan->no_po_jual = $poNumber; // Add PO number
+            $detailPenjualan->id_item = $item->id_item;
+            $detailPenjualan->jumlah_jual = $item->jumlah_jual;
+            $detailPenjualan->harga_jual_satuan = $item->harga_jual_satuan;
+            $detailPenjualan->subtotal_harga = $item->subtotal_harga;
+            $detailPenjualan->save();
+            
+            // Move items to location 5 (Gudang Perjalanan)
+            $this->moveItemToLocation($item->id_item, $item->jumlah_jual, 5);
+        }
+        
+        // Delete draft records after successful transfer
+        DraftDetailPenjualan::where('id_penjualan', $id)->delete();
+        $draftPenjualan->delete();
+        
+        DB::commit();
+        
+        return redirect()->route('pabrik.po-jual')->with('success', 'PO Penjualan berhasil diapprove!');
+        
+    } catch (\Exception $e) {
+        DB::rollback();
+        return back()->with('error', 'Terjadi kesalahan saat approve: ' . $e->getMessage());
     }
+}
+
+private function moveItemToLocation($itemId, $quantity, $targetLocationId)
+{
+    try {
+        // Get the item
+        $item = Item::findOrFail($itemId);
+        
+        // Get current location item record, assuming default location is stored in item table
+        $originalLocationId = $item->id_lokasi_item;
+        
+        // Check if there is enough stock in original location
+        if ($item->jumlah_item < $quantity) {
+            throw new \Exception("Stok tidak mencukupi untuk item: " . $item->nama_item);
+        }
+        
+        // Reduce quantity from original location
+        $item->jumlah_item -= $quantity;
+        $item->save();
+        
+        // Check if item already exists in target location
+        $targetItem = Item::where('id_jenis', $item->id_jenis)
+            ->where('id_lokasi_item', $targetLocationId)
+            ->first();
+            
+        if ($targetItem) {
+            // Update existing item in target location
+            $targetItem->jumlah_item += $quantity;
+            $targetItem->save();
+        } else {
+            // Create new item record for target location
+            $newItem = new Item();
+            $newItem->id_jenis = $item->id_jenis;
+            $newItem->id_lokasi_item = $targetLocationId;
+            $newItem->nama_item = $item->nama_item;
+            $newItem->jumlah_item = $quantity;
+            $newItem->harga_per_item = $item->harga_per_item;
+            $newItem->masa_item = $item->masa_item;
+            $newItem->save();
+        }
+        
+        return true;
+    } catch (\Exception $e) {
+        throw $e;
+    }
+}
+
     
     /**
      * Helper function to update item quantity
@@ -499,57 +545,110 @@ class PabrikController extends Controller
         return $pdf->stream('invoice-' . $poNumber . '.pdf');
     }
 
-    public function cancelApprovedPoJual($id)
-    {
-        try {
-            // Begin transaction
-            DB::beginTransaction();
+public function cancelApprovedPoJual($id)
+{
+    try {
+        // Begin transaction
+        DB::beginTransaction();
+        
+        // Find the approved PO
+        $penjualan = Penjualan::findOrFail($id);
+        
+        // Update status to "canceled"
+        $penjualan->status = 'canceled';
+        $penjualan->save();
+        
+        // Get all detail items and update the PO number
+        $detailPenjualan = DetailPenjualan::where('id_penjualan', $id)->get();
+        
+        foreach ($detailPenjualan as $detail) {
+            // Get current PO number
+            $currentPoNumber = $detail->no_po_jual;
             
-            // Find the approved PO
-            $penjualan = Penjualan::findOrFail($id);
+            // Parse PO number parts
+            $parts = explode('-', $currentPoNumber);
             
-            // Update status to "canceled"
-            $penjualan->status = 'canceled';
-            $penjualan->save();
-            
-            // Get all detail items and update the PO number
-            $detailPenjualan = DetailPenjualan::where('id_penjualan', $id)->get();
-            
-            foreach ($detailPenjualan as $detail) {
-                // Get current PO number
-                $currentPoNumber = $detail->no_po_jual;
-                
-                // Parse PO number parts
-                $parts = explode('-', $currentPoNumber);
-                
-                // Create canceled PO number using format POJ-003-YYYYMMDD-N
-                if (count($parts) >= 4) {
-                    // Standard format: POJ-XXX-YYYYMMDD-N
-                    $newPoNumber = "POJ-003-" . $parts[2] . "-" . $parts[3];
-                } else if (count($parts) === 3) {
-                    // Old format: POJ-YYYYMMDD-N
-                    $newPoNumber = "POJ-003-" . $parts[1] . "-" . $parts[2];
-                } else {
-                    // Fallback if format is unexpected
-                    $newPoNumber = "POJ-003-" . date('Ymd') . "-1";
-                }
-                
-                // Update PO number
-                $detail->no_po_jual = $newPoNumber;
-                $detail->save();
-                
-                // Restore the item quantity since PO is canceled
-                $this->updateItemQuantity($detail->id_item, $detail->jumlah_jual, 'increase');
+            // Create canceled PO number using format POJ-003-YYYYMMDD-N
+            if (count($parts) >= 4) {
+                // Standard format: POJ-XXX-YYYYMMDD-N
+                $newPoNumber = "POJ-003-" . $parts[2] . "-" . $parts[3];
+            } else if (count($parts) === 3) {
+                // Old format: POJ-YYYYMMDD-N
+                $newPoNumber = "POJ-003-" . $parts[1] . "-" . $parts[2];
+            } else {
+                // Fallback if format is unexpected
+                $newPoNumber = "POJ-003-" . date('Ymd') . "-1";
             }
             
-            DB::commit();
+            // Update PO number
+            $detail->no_po_jual = $newPoNumber;
+            $detail->save();
             
-            return redirect()->route('pabrik.po-jual')->with('success', 'PO Penjualan berhasil dibatalkan!');
-        } catch (\Exception $e) {
-            DB::rollback();
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            // Return items from location 5 to original location
+            $this->returnItemToOriginalLocation($detail->id_item, $detail->jumlah_jual);
         }
+        
+        DB::commit();
+        
+        return redirect()->route('pabrik.po-jual')->with('success', 'PO Penjualan berhasil dibatalkan!');
+    } catch (\Exception $e) {
+        DB::rollback();
+        return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
     }
+}
+
+private function returnItemToOriginalLocation($itemId, $quantity)
+{
+    try {
+        // Get original item from inventory
+        $originalItem = Item::findOrFail($itemId);
+        $id_jenis = $originalItem->id_jenis;
+        
+        // Find item in Gudang Perjalanan (location 5)
+        $transitItem = Item::where('id_jenis', $id_jenis)
+            ->where('id_lokasi_item', 5)
+            ->first();
+            
+        if (!$transitItem || $transitItem->jumlah_item < $quantity) {
+            throw new \Exception("Stok di Gudang Perjalanan tidak mencukupi untuk dikembalikan.");
+        }
+        
+        // Reduce from Gudang Perjalanan
+        $transitItem->jumlah_item -= $quantity;
+        
+        // If no items left in transit, delete the record
+        if ($transitItem->jumlah_item <= 0) {
+            $transitItem->delete();
+        } else {
+            $transitItem->save();
+        }
+        
+        // Return the original item record
+        $originalItem = Item::where('id_jenis', $id_jenis)
+            ->where('id_lokasi_item', '!=', 5)
+            ->first();
+            
+        if ($originalItem) {
+            // Increase quantity at original location
+            $originalItem->jumlah_item += $quantity;
+            $originalItem->save();
+        } else {
+            // Create new item record at original location if none exists
+            $newItem = new Item();
+            $newItem->id_jenis = $id_jenis;
+            $newItem->id_lokasi_item = 3; // Default to location 3 if original not found
+            $newItem->nama_item = $transitItem->nama_item;
+            $newItem->jumlah_item = $quantity;
+            $newItem->harga_per_item = $transitItem->harga_per_item;
+            $newItem->masa_item = $transitItem->masa_item;
+            $newItem->save();
+        }
+        
+        return true;
+    } catch (\Exception $e) {
+        throw $e;
+    }
+}
 
     public function editApprovedPoJual($id)
     {
@@ -607,4 +706,78 @@ class PabrikController extends Controller
             return back()->with('error', 'Terjadi kesalahan saat mengedit PO yang sudah diapprove: ' . $e->getMessage());
         }
     }
+
+/**
+ * Complete an approved PO, permanently removing items from inventory
+ */
+public function completePoJual($id)
+{
+    try {
+        // Begin transaction
+        DB::beginTransaction();
+        
+        // Find the approved PO
+        $penjualan = Penjualan::findOrFail($id);
+        
+        // Only allow completing approved POs
+        if ($penjualan->status !== 'approved') {
+            return back()->with('error', 'Hanya PO dengan status approved yang dapat diselesaikan.');
+        }
+        
+        // Update status to "completed"
+        $penjualan->status = 'completed';
+        $penjualan->save();
+        
+        // Get all detail items 
+        $detailPenjualan = DetailPenjualan::where('id_penjualan', $id)->get();
+        
+        foreach ($detailPenjualan as $detail) {
+            // Remove items from Gudang Perjalanan (location 5)
+            $this->removeItemsFromTransit($detail->id_item, $detail->jumlah_jual);
+        }
+        
+        DB::commit();
+        
+        return redirect()->route('pabrik.po-jual')->with('success', 'PO Penjualan berhasil diselesaikan!');
+    } catch (\Exception $e) {
+        DB::rollback();
+        return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+    }
+}
+
+private function removeItemsFromTransit($itemId, $quantity)
+{
+    try {
+        // Get item details
+        $item = Item::findOrFail($itemId);
+        $id_jenis = $item->id_jenis;
+        
+        // Find item in Gudang Perjalanan (location 5)
+        $transitItem = Item::where('id_jenis', $id_jenis)
+            ->where('id_lokasi_item', 5)
+            ->first();
+            
+        if (!$transitItem) {
+            throw new \Exception("Item tidak ditemukan di Gudang Perjalanan.");
+        }
+        
+        if ($transitItem->jumlah_item < $quantity) {
+            throw new \Exception("Stok di Gudang Perjalanan tidak mencukupi.");
+        }
+        
+        // Reduce from Gudang Perjalanan
+        $transitItem->jumlah_item -= $quantity;
+        
+        // If no items left in transit, delete the record
+        if ($transitItem->jumlah_item <= 0) {
+            $transitItem->delete();
+        } else {
+            $transitItem->save();
+        }
+        
+        return true;
+    } catch (\Exception $e) {
+        throw $e;
+    }
+}
 }

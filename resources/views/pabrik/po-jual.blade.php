@@ -36,7 +36,7 @@
                     @forelse($penjualan as $p)
                         <tr>
                         <td>
-                            @if($p->status == 'approved' || $p->status == 'canceled' || $p->status == 'amended')
+                            @if($p->status == 'approved' || $p->status == 'canceled' || $p->status == 'amended' || $p->status == 'completed')
                                 {{ $p->getNoPoJual() }}
                             @else
                                 <span class="text-muted">-</span>
@@ -55,6 +55,8 @@
                                     <span class="badge bg-danger">Canceled</span>
                                 @elseif($p->status == 'amended')
                                     <span class="badge bg-info">Amended</span>
+                                @elseif($p->status == 'completed')
+                                    <span class="badge bg-primary">Completed</span>
                                 @else
                                     <span class="badge bg-success">Approved</span>
                                 @endif
@@ -87,6 +89,12 @@
                                     <!-- Invoice Button for approved POs -->
                                     <a href="{{ route('pabrik.po-jual.invoice', $p->id_penjualan) }}" class="btn btn-sm btn-success" target="_blank">Invoice</a>
                                     
+                                    <!-- Complete Button for approved POs -->
+                                    <form action="{{ route('pabrik.po-jual.complete', $p->id_penjualan) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('Apakah Anda yakin ingin menyelesaikan PO ini? Barang akan dihapus dari gudang perjalanan secara permanen.')">Selesai</button>
+                                    </form>
+                                    
                                     <!-- Cancel Approved PO Button -->
                                     <form action="{{ route('pabrik.po-jual.cancel-approved', $p->id_penjualan) }}" method="POST" style="display:inline;">
                                         @csrf
@@ -96,6 +104,8 @@
                                     <!-- No action buttons for canceled POs -->
                                 @elseif($p->status == 'amended')
                                     <!-- No action buttons for amended POs -->
+                                @elseif($p->status == 'completed')
+                                    <!-- No action buttons for completed POs -->
                                 @endif
                             </td>
                         </tr>
