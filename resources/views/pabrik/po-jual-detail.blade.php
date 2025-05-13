@@ -50,8 +50,10 @@
                                         <span class="badge bg-danger">Canceled</span>
                                     @elseif($penjualan->status == 'amended')
                                         <span class="badge bg-info">Amended</span>
-                                    @else
+                                    @elseif($penjualan->status == 'approved')
                                         <span class="badge bg-success">Approved</span>
+                                    @else
+                                        <span class="badge bg-primary">Completed</span>
                                     @endif
                                 @else
                                     <span class="badge bg-warning">Draft</span>
