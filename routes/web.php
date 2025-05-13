@@ -119,12 +119,21 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pabrik/po-beli/create', [PoBeliController::class, 'createPoBeli'])->name('pabrik.po-beli.create');
     Route::post('/pabrik/po-beli', [PoBeliController::class, 'storePoBeli'])->name('pabrik.po-beli.store');
     Route::get('/pabrik/po-beli/{id}', [PoBeliController::class, 'showDetailPoBeli'])->name('pabrik.po-beli.show');
+    
+    // Routes for editing draft PO
     Route::get('/pabrik/po-beli/{id}/edit', [PoBeliController::class, 'editPoBeli'])->name('pabrik.po-beli.edit');
     Route::put('/pabrik/po-beli/{id}', [PoBeliController::class, 'updatePoBeli'])->name('pabrik.po-beli.update');
+    
+    // Routes for editing approved PO
+    Route::get('/pabrik/po-beli/{id}/edit-approved', [PoBeliController::class, 'editApprovedPoBeli'])->name('pabrik.po-beli.edit-approved');
+    Route::put('/pabrik/po-beli/{id}/update-approved', [PoBeliController::class, 'updateApprovedPoBeli'])->name('pabrik.po-beli.update-approved');
+    
+    // Other PO beli routes
     Route::delete('/pabrik/po-beli/{id}/cancel', [PoBeliController::class, 'cancelPoBeli'])->name('pabrik.po-beli.cancel');
     Route::post('/pabrik/po-beli/{id}/approve', [PoBeliController::class, 'approvePoBeli'])->name('pabrik.po-beli.approve');
     Route::get('/pabrik/po-beli/{id}/print-detail', [PoBeliController::class, 'printPoBeliDetail'])->name('pabrik.po-beli.print-detail');
     Route::post('/pabrik/po-beli/{id}/cancel-approved', [PoBeliController::class, 'cancelApprovedPoBeli'])->name('pabrik.po-beli.cancel-approved');
-    Route::get('/pabrik/po-beli/{id}/edit-approved', [PoBeliController::class, 'editApprovedPoBeli'])->name('pabrik.po-beli.edit-approved');
-    Route::post('/pabrik/po-beli/{id}/complete', [PoBeliController::class, 'completePoBeli'])->name('pabrik.po-beli.complete'); // New route for completing PO
+    Route::post('/pabrik/po-beli/{id}/complete', [PoBeliController::class, 'completePoBeli'])->name('pabrik.po-beli.complete');
 });
+
+

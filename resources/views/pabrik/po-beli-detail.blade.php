@@ -42,10 +42,16 @@
                         <tr>
                             <th>Status</th>
                             <td>
-                                @if($isApproved)
-                                    <span class="badge bg-success">Approved</span>
-                                @else
+                                @if($pembelian->status === 'draft')
                                     <span class="badge bg-warning">Draft</span>
+                                @elseif($pembelian->status === 'approved')
+                                    <span class="badge bg-success">Approved</span>
+                                @elseif($pembelian->status === 'canceled')
+                                    <span class="badge bg-danger">Canceled</span>
+                                @elseif($pembelian->status === 'amended')
+                                    <span class="badge bg-info">Amended</span>
+                                @elseif($pembelian->status === 'completed')
+                                    <span class="badge bg-primary">Completed</span>
                                 @endif
                             </td>
                         </tr>
@@ -108,50 +114,60 @@
 
             <div class="row">
                 <div class="col-md-12">
-                    <a href="{{ route('pabrik.po-beli') }}" class="btn btn-secondary">Kembali</a>
-                    
-                    @if(!$isApproved)
-                        <a href="{{ route('pabrik.po-beli.edit', $pembelian->id_pembelian) }}" 
-                           class="btn btn-warning">Edit</a>
-                        <form action="{{ route('pabrik.po-beli.approve', $pembelian->id_pembelian) }}" 
-                              method="POST" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-success" 
-                                    onclick="return confirm('Yakin ingin menyetujui PO ini?')">
-                                Approve
-                            </button>
-                        </form>
-                        <form action="{{ route('pabrik.po-beli.cancel', $pembelian->id_pembelian) }}" 
-                              method="POST" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger" 
-                                    onclick="return confirm('Yakin ingin membatalkan PO ini?')">
-                                Cancel
-                            </button>
-                        </form>
-                    @else
-                        <a href="{{ route('pabrik.po-beli.edit-approved', $pembelian->id_pembelian) }}" 
-                           class="btn btn-warning">Edit</a>
-                        <form action="{{ route('pabrik.po-beli.cancel-approved', $pembelian->id_pembelian) }}" 
-                              method="POST" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-danger" 
-                                    onclick="return confirm('Yakin ingin membatalkan PO ini?')">
-                                Cancel
-                            </button>
-                        </form>
-                        @if($pembelian->status === 'approved')
-                            <form action="{{ route('pabrik.po-beli.complete', $pembelian->id_pembelian) }}" 
-                                  method="POST" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-primary" 
-                                        onclick="return confirm('Yakin ingin menyelesaikan PO ini? Barang akan ditambahkan ke inventory.')">
-                                    Selesai
-                                </button>
-                            </form>
-                        @endif
-                    @endif
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ route('pabrik.po-beli') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Kembali
+                            </a>
+                            
+                            <div class="btn-group">
+                                @if($pembelian->status === 'draft')
+                                    <a href="{{ route('pabrik.po-beli.edit', $pembelian->id_pembelian) }}" 
+                                       class="btn btn-warning">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <form action="{{ route('pabrik.po-beli.approve', $pembelian->id_pembelian) }}" 
+                                          method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-success" 
+                                                onclick="return confirm('Yakin ingin menyetujui PO ini?')">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                    </form>
+                                    <form action="{{ route('pabrik.po-beli.cancel', $pembelian->id_pembelian) }}" 
+                                          method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger" 
+                                                onclick="return confirm('Yakin ingin membatalkan PO ini?')">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </button>
+                                    </form>
+                                @elseif($pembelian->status === 'approved')
+                                    <a href="{{ route('pabrik.po-beli.edit-approved', $pembelian->id_pembelian) }}" 
+                                       class="btn btn-warning">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <form action="{{ route('pabrik.po-beli.complete', $pembelian->id_pembelian) }}" 
+                                          method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-primary" 
+                                                onclick="return confirm('Yakin ingin menyelesaikan PO ini?')">
+                                            <i class="fas fa-check-double"></i> Selesai
+                                        </button>
+                                    </form>
+                                    <form action="{{ route('pabrik.po-beli.cancel-approved', $pembelian->id_pembelian) }}" 
+                                          method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-danger" 
+                                                onclick="return confirm('Yakin ingin membatalkan PO ini?')">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
                     
                     <a href="{{ route('pabrik.po-beli.print-detail', $pembelian->id_pembelian) }}" 
                        class="btn btn-secondary" target="_blank">

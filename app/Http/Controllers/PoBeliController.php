@@ -433,6 +433,7 @@ class PoBeliController extends Controller
     public function editApprovedPoBeli($id)
     {
         try {
+            // Begin transaction
             DB::beginTransaction();
 
             // Find the approved PO
@@ -441,38 +442,37 @@ class PoBeliController extends Controller
             // Get the details
             $detailPembelian = DetailPembelian::where('id_pembelian', $id)->get();
 
-            // Change status to "amended"
+            // 1. Change the status to "amended"
             $pembelian->status = 'amended';
             $pembelian->save();
 
-            // Remove items from inventory
-            foreach ($detailPembelian as $detail) {
-                $this->removeItemFromInventory($detail->id_item, $detail->jumlah_beli);
-            }
-
-            // Create a draft copy
+            // 2. Create a draft copy of the PO
             $draftPembelian = new DraftPembelian();
             $draftPembelian->id_pemasok = $pembelian->id_pemasok;
-            $draftPembelian->tanggal_pembelian = date('Y-m-d');
+            $draftPembelian->tanggal_pembelian = date('Y-m-d'); // Current date for the new draft
             $draftPembelian->total_harga_pembelian = $pembelian->total_harga_pembelian;
             $draftPembelian->id_karyawan = $pembelian->id_karyawan;
-            $draftPembelian->original_po_id = $id;
+            $draftPembelian->original_po_id = $id; // Reference to the original PO
             $draftPembelian->save();
 
-            // Create draft details
-            foreach ($detailPembelian as $item) {
+            // Get all detail items from the approved PO
+            $detailItems = $detailPembelian;
+
+            // Create draft detail records
+            foreach ($detailItems as $item) {
                 $draftDetailPembelian = new DraftDetailPembelian();
                 $draftDetailPembelian->id_pembelian = $draftPembelian->id_pembelian;
                 $draftDetailPembelian->id_item = $item->id_item;
                 $draftDetailPembelian->jumlah_beli = $item->jumlah_beli;
                 $draftDetailPembelian->harga_beli_satuan = $item->harga_beli_satuan;
                 $draftDetailPembelian->subtotal_harga = $item->subtotal_harga;
-                $draftDetailPembelian->original_po_detail_id = $item->id_detail_pembelian;
+                $draftDetailPembelian->original_po_detail_id = $item->id_detail_pembelian; // Reference to original detail
                 $draftDetailPembelian->save();
             }
 
             DB::commit();
 
+            // Redirect to edit page with the new draft ID
             return redirect()->route('pabrik.po-beli.edit', $draftPembelian->id_pembelian)
                 ->with('success', 'PO Pembelian yang sudah diapprove sedang diedit. Perubahan akan disimpan sebagai PO Draft baru.');
         } catch (\Exception $e) {
@@ -530,5 +530,65 @@ class PoBeliController extends Controller
         
         // Download PDF file
         return $pdf->stream('detail-po-beli-' . $id . '.pdf');
+    }
+
+    public function updateApprovedPoBeli(Request $request, $id)
+    {
+        $pembelian = Pembelian::findOrFail($id);
+        
+        if ($pembelian->status !== 'approved') {
+            return redirect()->route('pabrik.po-beli.show', $id)
+                ->with('error', 'Hanya PO dengan status approved yang dapat diedit.');
+        }
+
+        $request->validate([
+            'supplier_id' => 'required|exists:pemasok,id_pemasok',
+            'employee_id' => 'required|exists:karyawan,id_karyawan',
+            'items' => 'required|array|min:1',
+            'items.*.item_id' => 'required|exists:item,id_item',
+            'items.*.quantity' => 'required|integer|min:1'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Update pembelian header
+            $pembelian->update([
+                'id_pemasok' => $request->supplier_id,
+                'id_karyawan' => $request->employee_id,
+                'tanggal_pembelian' => now(),
+                'status' => 'amended' // Change status to amended
+            ]);
+
+            // Delete existing detail
+            $pembelian->detailPembelian()->delete();
+
+            // Insert new detail
+            $totalHarga = 0;
+            foreach ($request->items as $item) {
+                $itemData = Item::find($item['item_id']);
+                $subtotal = $itemData->harga_per_item * $item['quantity'];
+                $totalHarga += $subtotal;
+
+                $pembelian->detailPembelian()->create([
+                    'id_item' => $item['item_id'],
+                    'jumlah_beli' => $item['quantity'],
+                    'harga_beli_satuan' => $itemData->harga_per_item,
+                    'subtotal_harga' => $subtotal
+                ]);
+            }
+
+            // Update total harga
+            $pembelian->update(['total_harga_pembelian' => $totalHarga]);
+
+            DB::commit();
+            return redirect()->route('pabrik.po-beli.show', $id)
+                ->with('success', 'PO berhasil diperbarui dan status diubah menjadi amended.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 } 
