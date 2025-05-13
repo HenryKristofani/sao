@@ -17,8 +17,8 @@
             </a>
         </li>
         <li style="margin: 5px 0;">
-            <a href="#"
-               class="d-flex align-items-center px-3 py-2 text-decoration-none text-dark">
+            <a href="{{ route('pabrik.po-beli') }}"
+               class="d-flex align-items-center px-3 py-2 text-decoration-none {{ Request::is('pabrik/po-beli*') ? 'fw-bold text-primary' : 'text-dark' }}">
                 <span class="me-2">🛒</span> PO Beli
             </a>
         </li>

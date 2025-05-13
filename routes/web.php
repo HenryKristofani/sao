@@ -8,6 +8,7 @@ use App\Http\Controllers\DeveloperController;
 use App\Http\Controllers\PabrikController;
 use App\Http\Controllers\ItemsController;
 use App\Http\Controllers\ClientsController;
+use App\Http\Controllers\PoBeliController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -110,4 +111,20 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pabrik/pelanggan/{id}/edit', [ClientsController::class, 'edit'])->name('pabrik.pelanggan.edit');
     Route::put('/pabrik/pelanggan/{id}', [ClientsController::class, 'update'])->name('pabrik.pelanggan.update');
     Route::delete('/pabrik/pelanggan/{id}', [ClientsController::class, 'destroy'])->name('pabrik.pelanggan.destroy');
+});
+
+// Rute PO Pembelian
+Route::middleware(['auth'])->group(function () {
+    Route::get('/pabrik/po-beli', [PoBeliController::class, 'showPoBeli'])->name('pabrik.po-beli');
+    Route::get('/pabrik/po-beli/create', [PoBeliController::class, 'createPoBeli'])->name('pabrik.po-beli.create');
+    Route::post('/pabrik/po-beli', [PoBeliController::class, 'storePoBeli'])->name('pabrik.po-beli.store');
+    Route::get('/pabrik/po-beli/{id}', [PoBeliController::class, 'showDetailPoBeli'])->name('pabrik.po-beli.show');
+    Route::get('/pabrik/po-beli/{id}/edit', [PoBeliController::class, 'editPoBeli'])->name('pabrik.po-beli.edit');
+    Route::put('/pabrik/po-beli/{id}', [PoBeliController::class, 'updatePoBeli'])->name('pabrik.po-beli.update');
+    Route::delete('/pabrik/po-beli/{id}/cancel', [PoBeliController::class, 'cancelPoBeli'])->name('pabrik.po-beli.cancel');
+    Route::post('/pabrik/po-beli/{id}/approve', [PoBeliController::class, 'approvePoBeli'])->name('pabrik.po-beli.approve');
+    Route::get('/pabrik/po-beli/{id}/print-detail', [PoBeliController::class, 'printPoBeliDetail'])->name('pabrik.po-beli.print-detail');
+    Route::post('/pabrik/po-beli/{id}/cancel-approved', [PoBeliController::class, 'cancelApprovedPoBeli'])->name('pabrik.po-beli.cancel-approved');
+    Route::get('/pabrik/po-beli/{id}/edit-approved', [PoBeliController::class, 'editApprovedPoBeli'])->name('pabrik.po-beli.edit-approved');
+    Route::post('/pabrik/po-beli/{id}/complete', [PoBeliController::class, 'completePoBeli'])->name('pabrik.po-beli.complete'); // New route for completing PO
 });
