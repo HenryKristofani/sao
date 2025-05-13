@@ -94,6 +94,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/pabrik/po-jual/{id}/approve', [PabrikController::class, 'approvePoJual'])->name('pabrik.po-jual.approve');
     Route::get('/pabrik/po-jual/{id}/surat-jalan', [PabrikController::class, 'generateSuratJalan'])->name('pabrik.po-jual.surat-jalan');
     Route::get('/pabrik/po-jual/{id}/invoice', [PabrikController::class, 'generateInvoice'])->name('pabrik.po-jual.invoice');
+    Route::get('/pabrik/po-jual/{id}/print-detail', [PabrikController::class, 'printPoJualDetail'])->name('pabrik.po-jual.print-detail');
     Route::post('/pabrik/po-jual/{id}/cancel-approved', [PabrikController::class, 'cancelApprovedPoJual'])->name('pabrik.po-jual.cancel-approved');
     Route::get('/pabrik/po-jual/{id}/edit-approved', [PabrikController::class, 'editApprovedPoJual'])->name('pabrik.po-jual.edit-approved');
     Route::post('/pabrik/po-jual/{id}/complete', [PabrikController::class, 'completePoJual'])->name('pabrik.po-jual.complete'); // New route for completing PO

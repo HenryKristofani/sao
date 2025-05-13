@@ -4,7 +4,7 @@
 <!-- Include Sidebar -->
 @include('layouts.SidebarPabrik')
 
-<div class="content">
+<div class="content" style="margin-top: 60px;">
     <div class="container">
         <div class="row">
             <div class="col-12">

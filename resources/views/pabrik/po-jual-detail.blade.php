@@ -6,7 +6,12 @@
     <div class="content p-4" style="margin-left: 230px; margin-top: 60px;">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold">Detail PO Penjualan #{{ $penjualan->id_penjualan }}</h4>
-            <a href="{{ route('pabrik.po-jual') }}" class="btn btn-secondary">Kembali</a>
+            <div>
+                <a href="{{ route('pabrik.po-jual.print-detail', $penjualan->id_penjualan) }}" class="btn btn-primary me-2" target="_blank">
+                    <i class="bi bi-printer"></i> Cetak Detail
+                </a>
+                <a href="{{ route('pabrik.po-jual') }}" class="btn btn-secondary">Kembali</a>
+            </div>
         </div>
 
         <div class="card mb-4">
