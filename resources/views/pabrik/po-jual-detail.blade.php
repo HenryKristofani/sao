@@ -3,7 +3,7 @@
 @section('content')
     @include('layouts.SidebarPabrik')
 
-    <div class="content p-4" style="margin-left: 230px; margin-top: 60px;">
+    <div class="content p-4" style="margin-top: 60px;">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold">Detail PO Penjualan #{{ $penjualan->id_penjualan }}</h4>
             <div>

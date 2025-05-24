@@ -3,7 +3,7 @@
 @section('content')
     @include('layouts.SidebarPabrik')
 
-    <div class="content p-4" style="margin-left: 230px; margin-top: 60px;">
+    <div class="content p-4" style="margin-top: 60px;">
         <h4 class="fw-bold mb-4">Edit PO Jual #{{ $penjualan->id_penjualan }}</h4>
         
         @if(session('success'))
