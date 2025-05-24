@@ -29,17 +29,85 @@
                     <table class="table table-bordered table-hover">
                         <thead>
                             <tr>
+                                <th>Aksi</th>
                                 <th>No. PO</th>
                                 <th>Tanggal</th>
                                 <th>Pelanggan</th>
                                 <th>Total Harga</th>
                                 <th>Status</th>
-                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($penjualan as $p)
                                 <tr>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ route('pabrik.po-jual.show', $p->id_penjualan) }}" 
+                                               class="btn btn-sm btn-info" title="Detail">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            
+                                            @if($p->status == 'draft')
+                                                <a href="{{ route('pabrik.po-jual.edit', $p->id_penjualan) }}" 
+                                                   class="btn btn-sm btn-warning" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                
+                                                <form action="{{ route('pabrik.po-jual.approve', $p->id_penjualan) }}" 
+                                                      method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-success" 
+                                                            title="Approve" onclick="return confirm('Yakin ingin menyetujui PO ini?')">
+                                                        <i class="fas fa-thumbs-up"></i>
+                                                    </button>
+                                                </form>
+                                                
+                                                <form action="{{ route('pabrik.po-jual.cancel', $p->id_penjualan) }}" 
+                                                      method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger" 
+                                                            title="Cancel" onclick="return confirm('Yakin ingin membatalkan PO ini?')">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </form>
+                                            @elseif($p->status == 'approved')
+                                                <a href="{{ route('pabrik.po-jual.edit-approved', $p->id_penjualan) }}" 
+                                                   class="btn btn-sm btn-warning" title="Edit"
+                                                   onclick="return confirm('Mengedit PO yang sudah diapprove akan mengubah status PO ini menjadi Amended dan membuat draft PO baru. Lanjutkan?')">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                
+                                                <a href="{{ route('pabrik.po-jual.surat-jalan', $p->id_penjualan) }}" 
+                                                   class="btn btn-sm btn-primary" title="Surat Jalan" target="_blank">
+                                                    <i class="fas fa-truck"></i>
+                                                </a>
+                                                
+                                                <a href="{{ route('pabrik.po-jual.invoice', $p->id_penjualan) }}" 
+                                                   class="btn btn-sm btn-success" title="Invoice" target="_blank">
+                                                    <i class="fas fa-file-invoice"></i>
+                                                </a>
+                                                
+                                                <form action="{{ route('pabrik.po-jual.complete', $p->id_penjualan) }}" 
+                                                      method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-dark" 
+                                                            title="Selesai" onclick="return confirm('Apakah Anda yakin ingin menyelesaikan PO ini? Barang akan dihapus dari gudang perjalanan secara permanen.')">
+                                                        <i class="fas fa-flag-checkered"></i>
+                                                    </button>
+                                                </form>
+                                                
+                                                <form action="{{ route('pabrik.po-jual.cancel-approved', $p->id_penjualan) }}" 
+                                                      method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-danger" 
+                                                            title="Cancel" onclick="return confirm('Apakah Anda yakin ingin membatalkan PO yang sudah diapprove?')">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </td>
                                     <td>
                                         @if($p->status == 'approved' || $p->status == 'canceled' || $p->status == 'amended' || $p->status == 'completed')
                                             {{ $p->getNoPoJual() }}
@@ -62,74 +130,6 @@
                                         @else
                                             <span class="badge bg-success">Approved</span>
                                         @endif
-                                    </td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <a href="{{ route('pabrik.po-jual.show', $p->id_penjualan) }}" 
-                                               class="btn btn-sm btn-info" title="Detail">
-                                                <i class="fas fa-eye"></i> Detail
-                                            </a>
-                                            
-                                            @if($p->status == 'draft')
-                                                <a href="{{ route('pabrik.po-jual.edit', $p->id_penjualan) }}" 
-                                                   class="btn btn-sm btn-warning" title="Edit">
-                                                    <i class="fas fa-edit"></i> Edit
-                                                </a>
-                                                
-                                                <form action="{{ route('pabrik.po-jual.approve', $p->id_penjualan) }}" 
-                                                      method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-success" 
-                                                            title="Approve" onclick="return confirm('Yakin ingin menyetujui PO ini?')">
-                                                        <i class="fas fa-check"></i> Approve
-                                                    </button>
-                                                </form>
-                                                
-                                                <form action="{{ route('pabrik.po-jual.cancel', $p->id_penjualan) }}" 
-                                                      method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger" 
-                                                            title="Cancel" onclick="return confirm('Yakin ingin membatalkan PO ini?')">
-                                                        <i class="fas fa-times"></i> Cancel
-                                                    </button>
-                                                </form>
-                                            @elseif($p->status == 'approved')
-                                                <a href="{{ route('pabrik.po-jual.edit-approved', $p->id_penjualan) }}" 
-                                                   class="btn btn-sm btn-warning" title="Edit"
-                                                   onclick="return confirm('Mengedit PO yang sudah diapprove akan mengubah status PO ini menjadi Amended dan membuat draft PO baru. Lanjutkan?')">
-                                                    <i class="fas fa-edit"></i> Edit
-                                                </a>
-                                                
-                                                <a href="{{ route('pabrik.po-jual.surat-jalan', $p->id_penjualan) }}" 
-                                                   class="btn btn-sm btn-primary" title="Surat Jalan" target="_blank">
-                                                    <i class="fas fa-file-alt"></i> Surat Jalan
-                                                </a>
-                                                
-                                                <a href="{{ route('pabrik.po-jual.invoice', $p->id_penjualan) }}" 
-                                                   class="btn btn-sm btn-success" title="Invoice" target="_blank">
-                                                    <i class="fas fa-file-invoice"></i> Invoice
-                                                </a>
-                                                
-                                                <form action="{{ route('pabrik.po-jual.complete', $p->id_penjualan) }}" 
-                                                      method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-primary" 
-                                                            title="Complete" onclick="return confirm('Apakah Anda yakin ingin menyelesaikan PO ini? Barang akan dihapus dari gudang perjalanan secara permanen.')">
-                                                        <i class="fas fa-check-double"></i> Selesai
-                                                    </button>
-                                                </form>
-                                                
-                                                <form action="{{ route('pabrik.po-jual.cancel-approved', $p->id_penjualan) }}" 
-                                                      method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-danger" 
-                                                            title="Cancel" onclick="return confirm('Apakah Anda yakin ingin membatalkan PO yang sudah diapprove?')">
-                                                        <i class="fas fa-times"></i> Cancel
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        </div>
                                     </td>
                                 </tr>
                             @empty

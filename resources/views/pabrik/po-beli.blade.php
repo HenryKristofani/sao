@@ -28,17 +28,70 @@
                 <table class="table table-bordered table-hover">
                     <thead>
                         <tr>
+                            <th>Aksi</th>
                             <th>No. PO</th>
                             <th>Tanggal</th>
                             <th>Pemasok</th>
                             <th>Total Harga</th>
                             <th>Status</th>
-                            <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($pembelian as $po)
                             <tr>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{{ route('pabrik.po-beli.show', $po->id_pembelian) }}" 
+                                           class="btn btn-sm btn-info" title="Detail">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        
+                                        @if($po->status === 'draft')
+                                            <a href="{{ route('pabrik.po-beli.edit', $po->id_pembelian) }}" 
+                                               class="btn btn-sm btn-warning" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ route('pabrik.po-beli.approve', $po->id_pembelian) }}" 
+                                                  method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-success" 
+                                                        title="Approve" onclick="return confirm('Yakin ingin menyetujui PO ini?')">
+                                                    <i class="fas fa-thumbs-up"></i>
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('pabrik.po-beli.cancel', $po->id_pembelian) }}" 
+                                                  method="POST" class="d-inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-danger" 
+                                                        title="Cancel" onclick="return confirm('Yakin ingin membatalkan PO ini?')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </form>
+                                        @elseif($po->status === 'approved')
+                                            <a href="{{ route('pabrik.po-beli.edit-approved', $po->id_pembelian) }}" 
+                                               class="btn btn-sm btn-warning" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{{ route('pabrik.po-beli.complete', $po->id_pembelian) }}" 
+                                                  method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-dark" 
+                                                        title="Selesai" onclick="return confirm('Yakin ingin menyelesaikan PO ini?')">
+                                                    <i class="fas fa-flag-checkered"></i>
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('pabrik.po-beli.cancel-approved', $po->id_pembelian) }}" 
+                                                  method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-danger" 
+                                                        title="Cancel" onclick="return confirm('Yakin ingin membatalkan PO ini?')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
                                 <td>
                                     @if($po->status === 'draft')
                                         -
@@ -62,59 +115,6 @@
                                         <span class="badge bg-primary">Completed</span>
                                     @endif
                                 </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <a href="{{ route('pabrik.po-beli.show', $po->id_pembelian) }}" 
-                                           class="btn btn-sm btn-info" title="Detail">
-                                            <i class="fas fa-eye"></i> Detail
-                                        </a>
-                                        
-                                        @if($po->status === 'draft')
-                                            <a href="{{ route('pabrik.po-beli.edit', $po->id_pembelian) }}" 
-                                               class="btn btn-sm btn-warning" title="Edit">
-                                                <i class="fas fa-edit"></i> Edit
-                                            </a>
-                                            <form action="{{ route('pabrik.po-beli.approve', $po->id_pembelian) }}" 
-                                                  method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-success" 
-                                                        title="Approve" onclick="return confirm('Yakin ingin menyetujui PO ini?')">
-                                                    <i class="fas fa-check"></i> Approve
-                                                </button>
-                                            </form>
-                                            <form action="{{ route('pabrik.po-beli.cancel', $po->id_pembelian) }}" 
-                                                  method="POST" class="d-inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger" 
-                                                        title="Cancel" onclick="return confirm('Yakin ingin membatalkan PO ini?')">
-                                                    <i class="fas fa-times"></i> Cancel
-                                                </button>
-                                            </form>
-                                        @elseif($po->status === 'approved')
-                                            <a href="{{ route('pabrik.po-beli.edit-approved', $po->id_pembelian) }}" 
-                                               class="btn btn-sm btn-warning" title="Edit">
-                                                <i class="fas fa-edit"></i> Edit
-                                            </a>
-                                            <form action="{{ route('pabrik.po-beli.complete', $po->id_pembelian) }}" 
-                                                  method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-primary" 
-                                                        title="Complete" onclick="return confirm('Yakin ingin menyelesaikan PO ini?')">
-                                                    <i class="fas fa-check-double"></i> Selesai
-                                                </button>
-                                            </form>
-                                            <form action="{{ route('pabrik.po-beli.cancel-approved', $po->id_pembelian) }}" 
-                                                  method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-danger" 
-                                                        title="Cancel" onclick="return confirm('Yakin ingin membatalkan PO ini?')">
-                                                    <i class="fas fa-times"></i> Cancel
-                                                </button>
-                                            </form>
-                                        @endif
-                                    </div>
-                                </td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -123,4 +123,4 @@
         </div>
     </div>
 </div>
-@endsection 
+@endsection
