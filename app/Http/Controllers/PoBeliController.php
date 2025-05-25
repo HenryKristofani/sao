@@ -156,7 +156,18 @@ class PoBeliController extends Controller
     public function cancelPoBeli($id)
     {
         try {
+            DB::beginTransaction();
+
             $draftPembelian = DraftPembelian::findOrFail($id);
+
+            // Check if this draft PO is from editing an approved PO
+            if (!empty($draftPembelian->original_po_id)) {
+                // This is a draft created from editing an approved PO
+                // Restore the original PO status back to 'approved'
+                $originalPo = Pembelian::findOrFail($draftPembelian->original_po_id);
+                $originalPo->status = 'approved';
+                $originalPo->save();
+            }
 
             // Delete related draft details
             DraftDetailPembelian::where('id_pembelian', $id)->delete();
@@ -164,8 +175,11 @@ class PoBeliController extends Controller
             // Delete the draft pembelian (PO)
             $draftPembelian->delete();
 
+            DB::commit();
+
             return redirect()->route('pabrik.po-beli')->with('success', 'PO Pembelian berhasil dibatalkan!');
         } catch (\Exception $e) {
+            DB::rollback();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -269,25 +283,41 @@ class PoBeliController extends Controller
                 $originalPoNumber = $originalPo->getNoPoBeli();
                 $parts = explode('-', $originalPoNumber);
                 
-                // Similar logic to PO Jual for amendment numbering
+                // Get the current amendment number from the original PO number
                 $date = $parts[2] ?? date('Ymd');
                 $sequence = $parts[3] ?? "1";
                 
-                if ($parts[1] === "001") {
-                    $poNumber = "POB-002-" . $date . "-" . $sequence;
-                } else if ($parts[1] === "002") {
-                    $poNumber = "POB-012-" . $date . "-" . $sequence;
-                } else if ($parts[1] === "012") {
-                    $poNumber = "POB-022-" . $date . "-" . $sequence;
-                } else if ($parts[1] === "022") {
-                    $poNumber = "POB-032-" . $date . "-" . $sequence;
+                // Extract the current amendment number
+                if (isset($parts[1])) {
+                    $currentCode = $parts[1];
+                    if ($currentCode === "100") {
+                        $newCode = "200";
+                    } else if ($currentCode === "200") {
+                        // Get the amendment count and increment
+                        $amendmentNumber = (int)substr($currentCode, 1) + 1;
+                        if ($amendmentNumber < 10) {
+                            $amendmentNumber = '0' . $amendmentNumber;
+                        }
+                        $newCode = "2" . $amendmentNumber;
+                    } else if (strpos($currentCode, "2") === 0 && strlen($currentCode) === 3) {
+                        // Already an amended PO (2XX format)
+                        $amendmentNumber = (int)substr($currentCode, 1) + 1;
+                        if ($amendmentNumber < 10) {
+                            $amendmentNumber = '0' . $amendmentNumber;
+                        }
+                        $newCode = "2" . $amendmentNumber;
+                    } else {
+                        $newCode = "200";
+                    }
                 } else {
-                    $poNumber = "POB-002-" . $date . "-" . $sequence;
+                    $newCode = "200";
                 }
+                
+                $poNumber = "POB-" . $newCode . "-" . $date . "-" . $sequence;
             } else {
-                // New PO numbering
+                // New PO numbering - starts with 100
                 $today = date('Ymd');
-                $lastPo = DetailPembelian::where('no_po_beli', 'like', 'POB-001-' . $today . '-%')
+                $lastPo = DetailPembelian::where('no_po_beli', 'like', 'POB-100-' . $today . '-%')
                     ->orderBy('no_po_beli', 'desc')
                     ->first();
 
@@ -299,7 +329,7 @@ class PoBeliController extends Controller
                     }
                 }
 
-                $poNumber = "POB-001-" . $today . "-" . $sequence;
+                $poNumber = "POB-100-" . $today . "-" . $sequence;
             }
 
             // Create new Pembelian record
@@ -387,16 +417,16 @@ class PoBeliController extends Controller
             $detailPembelian = DetailPembelian::where('id_pembelian', $id)->get();
 
             foreach ($detailPembelian as $detail) {
-                // Update PO number for canceled items
+                // Update PO number for canceled items - change to 300 format
                 $currentPoNumber = $detail->no_po_beli;
                 $parts = explode('-', $currentPoNumber);
                 
                 if (count($parts) >= 4) {
-                    $newPoNumber = "POB-003-" . $parts[2] . "-" . $parts[3];
+                    $newPoNumber = "POB-300-" . $parts[2] . "-" . $parts[3];
                 } else if (count($parts) === 3) {
-                    $newPoNumber = "POB-003-" . $parts[1] . "-" . $parts[2];
+                    $newPoNumber = "POB-300-" . $parts[1] . "-" . $parts[2];
                 } else {
-                    $newPoNumber = "POB-003-" . date('Ymd') . "-1";
+                    $newPoNumber = "POB-300-" . date('Ymd') . "-1";
                 }
 
                 $detail->no_po_beli = $newPoNumber;
@@ -591,4 +621,4 @@ class PoBeliController extends Controller
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
-} 
+}
