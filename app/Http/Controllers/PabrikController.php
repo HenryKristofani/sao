@@ -521,8 +521,8 @@ class PabrikController extends Controller
             ->firstOrFail();
 
         // Check if the PO is approved - only generate invoice for approved POs
-        if ($penjualan->status !== 'approved') {
-            return back()->with('error', 'Invoice hanya dapat dibuat untuk PO yang sudah diapprove.');
+        if (!in_array($penjualan->status, ['approved', 'returned'])) {
+            return back()->with('error', 'Invoice hanya dapat dibuat untuk PO yang sudah diapprove atau dikembalikan.');
         }
 
         // Get the PO number from the first detail
@@ -845,4 +845,140 @@ public function printPoJualDetail($id)
     // Download PDF file with nice filename
     return $pdf->stream('detail-po-jual-' . $id . '.pdf');
 }
+
+    public function showReturnPoJual($id)
+    {
+        // Find the approved PO
+        $penjualan = Penjualan::with(['pelanggan', 'karyawan', 'detailPenjualan.item'])
+            ->where('id_penjualan', $id)
+            ->firstOrFail();
+
+        // Only allow return for approved POs
+        if ($penjualan->status !== 'approved') {
+            return back()->with('error', 'Hanya PO dengan status approved yang dapat di-return.');
+        }
+
+        return view('pabrik.return-po-jual', [
+            'penjualan' => $penjualan,
+            'detailPenjualan' => $penjualan->detailPenjualan
+        ]);
+    }
+
+    public function processReturnPoJual(Request $request, $id)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Find the approved PO
+            $penjualan = Penjualan::findOrFail($id);
+
+            // Only allow return for approved POs
+            if ($penjualan->status !== 'approved') {
+                throw new \Exception('Hanya PO dengan status approved yang dapat di-return.');
+            }
+
+            // Validate input
+            $request->validate([
+                'return_items' => 'required|array',
+                'return_items.*.id_detail_penjualan' => 'required|exists:detail_penjualan,id_detail_penjualan',
+                'return_items.*.quantity' => 'required|numeric|min:1',
+            ]);
+
+            // Process each returned item
+            foreach ($request->return_items as $returnItem) {
+                $detailPenjualan = DetailPenjualan::findOrFail($returnItem['id_detail_penjualan']);
+                
+                // Get the quantity to return
+                $quantityToReturn = isset($returnItem['return_all']) && $returnItem['return_all'] ? 
+                    $detailPenjualan->jumlah_jual : 
+                    $returnItem['quantity'];
+
+                // Move items to return location (id_lokasi_item = 6)
+                $this->moveItemToReturnLocation($detailPenjualan->id_item, $quantityToReturn);
+
+                // Update PO number to returned format
+                $currentPoNumber = $detailPenjualan->no_po_jual;
+                $parts = explode('-', $currentPoNumber);
+                
+                if (count($parts) >= 4) {
+                    // Format: POJ-XXX-YYYYMMDD-N
+                    $newPoNumber = "POJ-400-" . $parts[2] . "-" . $parts[3];
+                } else if (count($parts) === 3) {
+                    // Format: POJ-YYYYMMDD-N
+                    $newPoNumber = "POJ-400-" . $parts[1] . "-" . $parts[2];
+                } else {
+                    // Fallback
+                    $newPoNumber = "POJ-400-" . date('Ymd') . "-1";
+                }
+
+                $detailPenjualan->no_po_jual = $newPoNumber;
+                $detailPenjualan->save();
+            }
+
+            // Update PO status to returned
+            $penjualan->status = 'returned';
+            $penjualan->save();
+
+            DB::commit();
+
+            return redirect()->route('pabrik.po-jual')
+                ->with('success', 'PO Penjualan berhasil di-return!');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    private function moveItemToReturnLocation($itemId, $quantity)
+    {
+        try {
+            // Get the item
+            $item = Item::findOrFail($itemId);
+            $id_jenis = $item->id_jenis;
+
+            // Find item in Gudang Perjalanan (location 5)
+            $transitItem = Item::where('id_jenis', $id_jenis)
+                ->where('id_lokasi_item', 5)
+                ->first();
+
+            if (!$transitItem || $transitItem->jumlah_item < $quantity) {
+                throw new \Exception("Stok di Gudang Perjalanan tidak mencukupi untuk di-return.");
+            }
+
+            // Reduce from Gudang Perjalanan
+            $transitItem->jumlah_item -= $quantity;
+
+            // If no items left in transit, delete the record
+            if ($transitItem->jumlah_item <= 0) {
+                $transitItem->delete();
+            } else {
+                $transitItem->save();
+            }
+
+            // Check if item already exists in return location
+            $returnItem = Item::where('id_jenis', $id_jenis)
+                ->where('id_lokasi_item', 6)
+                ->first();
+
+            if ($returnItem) {
+                // Update existing item in return location
+                $returnItem->jumlah_item += $quantity;
+                $returnItem->save();
+            } else {
+                // Create new item record for return location
+                $newItem = new Item();
+                $newItem->id_jenis = $id_jenis;
+                $newItem->id_lokasi_item = 6; // Return location
+                $newItem->nama_item = $item->nama_item;
+                $newItem->jumlah_item = $quantity;
+                $newItem->harga_per_item = $item->harga_per_item;
+                $newItem->masa_item = $item->masa_item;
+                $newItem->save();
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            throw $e;
+        }
+    }
 }

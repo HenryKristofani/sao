@@ -99,6 +99,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/pabrik/po-jual/{id}/cancel-approved', [PabrikController::class, 'cancelApprovedPoJual'])->name('pabrik.po-jual.cancel-approved');
     Route::get('/pabrik/po-jual/{id}/edit-approved', [PabrikController::class, 'editApprovedPoJual'])->name('pabrik.po-jual.edit-approved');
     Route::post('/pabrik/po-jual/{id}/complete', [PabrikController::class, 'completePoJual'])->name('pabrik.po-jual.complete'); // New route for completing PO
+    Route::get('/po-jual/{id}/return', [PabrikController::class, 'showReturnPoJual'])->name('pabrik.po-jual.return');
+    Route::post('/po-jual/{id}/process-return', [PabrikController::class, 'processReturnPoJual'])->name('pabrik.po-jual.process-return');
 });
 
 // Rute Items Pabrik

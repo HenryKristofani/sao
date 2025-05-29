@@ -55,10 +55,12 @@
                                         <span class="badge bg-danger">Canceled</span>
                                     @elseif($penjualan->status == 'amended')
                                         <span class="badge bg-info">Amended</span>
-                                    @elseif($penjualan->status == 'approved')
-                                        <span class="badge bg-success">Approved</span>
-                                    @else
+                                    @elseif($penjualan->status == 'completed')
                                         <span class="badge bg-primary">Completed</span>
+                                    @elseif($penjualan->status == 'returned')
+                                        <span class="badge bg-secondary">Returned</span>
+                                    @else
+                                        <span class="badge bg-success">Approved</span>
                                     @endif
                                 @else
                                     <span class="badge bg-warning">Draft</span>

@@ -87,6 +87,11 @@
                                                    class="btn btn-sm btn-success" title="Invoice" target="_blank">
                                                     <i class="fas fa-file-invoice"></i>
                                                 </a>
+
+                                                <a href="{{ route('pabrik.po-jual.return', $p->id_penjualan) }}" 
+                                                   class="btn btn-sm btn-info" title="Return">
+                                                    <i class="fas fa-undo"></i>
+                                                </a>
                                                 
                                                 <form action="{{ route('pabrik.po-jual.complete', $p->id_penjualan) }}" 
                                                       method="POST" class="d-inline">
@@ -105,12 +110,25 @@
                                                         <i class="fas fa-times"></i>
                                                     </button>
                                                 </form>
+                                            @elseif($p->status == 'returned')
+                                                <a href="{{ route('pabrik.po-jual.invoice', $p->id_penjualan) }}" 
+                                                   class="btn btn-sm btn-success" title="Invoice" target="_blank">
+                                                    <i class="fas fa-file-invoice"></i>
+                                                </a>
                                             @endif
                                         </div>
                                     </td>
                                     <td>
-                                        @if($p->status == 'approved' || $p->status == 'canceled' || $p->status == 'amended' || $p->status == 'completed')
-                                            {{ $p->getNoPoJual() }}
+                                        @if($p->status == 'approved' || $p->status == 'canceled' || $p->status == 'amended' || $p->status == 'completed' || $p->status == 'returned')
+                                            @php
+                                                $poNumber = '';
+                                                if ($p->status == 'returned') {
+                                                    $poNumber = $p->detailPenjualan->first()->no_po_jual ?? 'POJ-400-' . date('Ymd') . '-1';
+                                                } else {
+                                                    $poNumber = $p->getNoPoJual();
+                                                }
+                                            @endphp
+                                            {{ $poNumber }}
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
@@ -127,6 +145,8 @@
                                             <span class="badge bg-info">Amended</span>
                                         @elseif($p->status == 'completed')
                                             <span class="badge bg-primary">Completed</span>
+                                        @elseif($p->status == 'returned')
+                                            <span class="badge bg-secondary">Returned</span>
                                         @else
                                             <span class="badge bg-success">Approved</span>
                                         @endif
