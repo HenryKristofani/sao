@@ -51,7 +51,7 @@ class PoBeliController extends Controller
         // Get data for dropdowns
         $items = Item::all();
         $pemasok = Pemasok::all();
-        $karyawan = Karyawan::all();
+        $karyawan = Karyawan::where('id_karyawan', 2)->get();
 
         return view('pabrik.create-po-beli', [
             'items' => $items,
@@ -193,7 +193,7 @@ class PoBeliController extends Controller
         // Get data for dropdowns
         $items = Item::all();
         $pemasok = Pemasok::all();
-        $karyawan = Karyawan::all();
+        $karyawan = Karyawan::where('id_karyawan', 2)->get();
 
         return view('pabrik.edit-po-beli', [
             'pembelian' => $pembelian,

@@ -21,7 +21,7 @@ class PembelianController extends Controller
         }
 
         $pemasok = Pemasok::all();
-        $karyawan = Karyawan::all();
+        $karyawan = Karyawan::where('id_karyawan', 2)->get();
         $items = Item::all();
         $detailPembelian = $pembelian->detailPembelian;
 
@@ -97,7 +97,7 @@ class PembelianController extends Controller
         }
 
         $pemasok = Pemasok::all();
-        $karyawan = Karyawan::all();
+        $karyawan = Karyawan::where('id_karyawan', 2)->get();
         $items = Item::all();
         $detailPembelian = $pembelian->detailPembelian;
 

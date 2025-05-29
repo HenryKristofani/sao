@@ -50,10 +50,10 @@ class PabrikController extends Controller
 
     public function createPoJual()
     {
-        // Ambil data untuk dropdown
-        $items = Item::all();
+        // Ambil data untuk dropdown dengan filter
+        $items = Item::whereIn('id_lokasi_item', [1, 2, 3])->get(); // hanya lokasi 1, 2, 3
         $pelanggan = Pelanggan::all();
-        $karyawan = Karyawan::all();
+        $karyawan = Karyawan::where('id_karyawan', 1)->get(); // hanya karyawan ID 2
 
         return view('pabrik.create-po-jual', [
             'items' => $items,
@@ -61,6 +61,7 @@ class PabrikController extends Controller
             'karyawan' => $karyawan
         ]);
     }
+
 
     public function storePoJual(Request $request)
     {
@@ -189,10 +190,10 @@ class PabrikController extends Controller
         $penjualan = DraftPenjualan::with(['pelanggan', 'karyawan'])->findOrFail($id);
         $detailPenjualan = DraftDetailPenjualan::with('item')->where('id_penjualan', $id)->get();
 
-        // Get data for dropdowns
-        $items = Item::all();
+        // Ambil data untuk dropdown dengan filter
+        $items = Item::whereIn('id_lokasi_item', [1, 2, 3])->get(); // hanya lokasi 1, 2, 3
         $pelanggan = Pelanggan::all();
-        $karyawan = Karyawan::all();
+        $karyawan = Karyawan::where('id_karyawan', 1)->get(); // hanya karyawan ID 2
 
         return view('pabrik.edit-po-jual', [
             'penjualan' => $penjualan,
