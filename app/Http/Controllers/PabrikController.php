@@ -881,17 +881,15 @@ public function printPoJualDetail($id)
             $request->validate([
                 'return_items' => 'required|array',
                 'return_items.*.id_detail_penjualan' => 'required|exists:detail_penjualan,id_detail_penjualan',
-                'return_items.*.quantity' => 'required|numeric|min:1',
+                'return_items.*.return_all' => 'required|boolean',
             ]);
 
             // Process each returned item
             foreach ($request->return_items as $returnItem) {
                 $detailPenjualan = DetailPenjualan::findOrFail($returnItem['id_detail_penjualan']);
                 
-                // Get the quantity to return
-                $quantityToReturn = isset($returnItem['return_all']) && $returnItem['return_all'] ? 
-                    $detailPenjualan->jumlah_jual : 
-                    $returnItem['quantity'];
+                // Since we're returning all, use the full quantity
+                $quantityToReturn = $detailPenjualan->jumlah_jual;
 
                 // Move items to return location (id_lokasi_item = 6)
                 $this->moveItemToReturnLocation($detailPenjualan->id_item, $quantityToReturn);
