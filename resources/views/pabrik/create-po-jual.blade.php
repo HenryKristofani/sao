@@ -63,6 +63,12 @@
                         @enderror
                     </div>
 
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="perlu_pabrikasi" name="perlu_pabrikasi">
+                        <label class="form-check-label" for="perlu_pabrikasi">Perlu Pabrikasi?</label>
+                        <small id="pabrikasi_warning" class="form-text text-danger" style="display: none;">Menambahkan proses pabrikasi akan memperpanjang waktu produksi hingga 5 hari</small>
+                    </div>
+
                     <hr>
                     <h5 class="mb-3">Detail Item</h5>
 
@@ -270,6 +276,16 @@ function calculateGrandTotal() {
         // Setup initial row
         document.querySelectorAll('.item-row').forEach(function(row) {
             setupEventListeners(row);
+        });
+        
+        // Add event listener for the checkbox
+        document.getElementById('perlu_pabrikasi').addEventListener('change', function() {
+            const warning = document.getElementById('pabrikasi_warning');
+            if (this.checked) {
+                warning.style.display = 'block';
+            } else {
+                warning.style.display = 'none';
+            }
         });
         
         // Validasi form sebelum submit

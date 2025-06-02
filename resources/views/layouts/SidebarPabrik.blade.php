@@ -27,8 +27,8 @@
                 </a>
             </li>
             <li style="margin: 5px 0;">
-                <a href="#"
-                   class="d-flex align-items-center px-3 py-2 text-decoration-none text-dark">
+                <a href="{{ route('pabrik.scheduler') }}"
+                   class="d-flex align-items-center px-3 py-2 text-decoration-none {{ Request::is('pabrik/scheduler*') ? 'fw-bold text-primary' : 'text-dark' }}">
                     <span class="me-2">📅</span> Scheduler
                 </a>
             </li>

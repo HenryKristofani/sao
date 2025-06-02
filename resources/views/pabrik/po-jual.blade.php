@@ -87,7 +87,7 @@
                                                    class="btn btn-sm btn-success" title="Invoice" target="_blank">
                                                     <i class="fas fa-file-invoice"></i>
                                                 </a>
-
+                                                
                                                 <a href="{{ route('pabrik.po-jual.return', $p->id_penjualan) }}" 
                                                    class="btn btn-sm btn-info" title="Return">
                                                     <i class="fas fa-undo"></i>

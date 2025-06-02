@@ -9,6 +9,7 @@ use App\Http\Controllers\PabrikController;
 use App\Http\Controllers\ItemsController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\PoBeliController;
+use App\Http\Controllers\SchedulerController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -101,6 +102,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/pabrik/po-jual/{id}/complete', [PabrikController::class, 'completePoJual'])->name('pabrik.po-jual.complete'); // New route for completing PO
     Route::get('/po-jual/{id}/return', [PabrikController::class, 'showReturnPoJual'])->name('pabrik.po-jual.return');
     Route::post('/po-jual/{id}/process-return', [PabrikController::class, 'processReturnPoJual'])->name('pabrik.po-jual.process-return');
+});
+
+// Rute Scheduler
+Route::middleware(['auth'])->group(function () {
+    Route::get('/pabrik/scheduler', [SchedulerController::class, 'index'])->name('pabrik.scheduler');
+    Route::post('/pabrik/scheduler/{id}/update-status', [SchedulerController::class, 'updateStatus'])->name('pabrik.scheduler.updateStatus');
 });
 
 // Rute Items Pabrik
