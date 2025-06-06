@@ -20,128 +20,14 @@
 
         <div class="card">
             <div class="card-body">
-                {{-- Simplified Calendar View --}}
-                <h5>Visualisasi Kalender</h5>
-                <div class="calendar-container mb-4">
-                    @php
-                        // Determine date range (e.g., current week + next 3 weeks)
-                        $startDate = \Carbon\Carbon::now()->startOfWeek();
-                        $endDate = $startDate->copy()->addWeeks(3)->endOfWeek();
-                        $dates = collect();
-                        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-                            $dates->push($date->copy());
-                        }
+                {{-- FullCalendar will be rendered here --}}
+                <div id="calendar" data-schedules="{{ json_encode($groupedSchedules) }}"></div>
+            </div>
+        </div>
 
-                        // Prepare schedules for easy lookup by date
-                        $schedulesByDate = [];
-                        foreach ($groupedSchedules as $poId => $poSchedules) {
-                             foreach ($poSchedules as $schedule) {
-                                // Assuming schedule spans from start to end date inclusive
-                                $current = \Carbon\Carbon::parse($schedule->tanggal_mulai);
-                                $end = \Carbon\Carbon::parse($schedule->tanggal_selesai);
-                                while ($current->lte($end)) {
-                                    $schedulesByDate[$current->toDateString()][] = ['schedule' => $schedule, 'poId' => $poId];
-                                    $current->addDay();
-                                }
-                             }
-                        }
-                    @endphp
-
-                    <div class="calendar-header">
-                        @foreach($dates->take(7) as $date)
-                            <div class="day-header">{{ $date->format('D') }}<br>{{ $date->format('M d') }}</div>
-                        @endforeach
-                    </div>
-
-                    <div class="calendar-body">
-                         @foreach($dates->chunk(7) as $week)
-                            <div class="calendar-week">
-                                @foreach($week as $date)
-                                    <div class="calendar-day">
-                                        <div class="day-number {{ $date->isToday() ? 'today' : '' }}">{{ $date->day }}</div>
-                                        <div class="day-content">
-                                            {{-- Display schedules for this date --}}
-                                            @if(isset($schedulesByDate[$date->toDateString()]))
-                                                @foreach($schedulesByDate[$date->toDateString()] as $item)
-                                                    @php
-                                                        $schedule = $item['schedule'];
-                                                        $poId = $item['poId'];
-                                                        // Simple color based on stage
-                                                        $color = '#ccc'; // Default gray
-                                                        switch($schedule->catatan) {
-                                                            case 'Tahap Beli': $color = '#ff6347'; break; // Tomato
-                                                            case 'Tahap Produksi': $color = '#ffd700'; break; // Gold
-                                                            case 'Tahap Packing': $color = '#6495ed'; break; // CornflowerBlue
-                                                            case 'Tahap Kirim': $color = '#32cd32'; break; // LimeGreen
-                                                        }
-                                                    @endphp
-                                                    <div class="schedule-block" style="background-color: {{ $color }};" title="PO {{ $poId }} - {{ $schedule->catatan }}">
-                                                        <small>PO {{ $poId }}</small><br>
-                                                        {{ $schedule->catatan }}
-                                                    </div>
-                                                @endforeach
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                         @endforeach
-                    </div>
-                </div>
-
-                <style>
-                    .calendar-container {
-                        border: 1px solid #e0e0e0;
-                        border-radius: 5px;
-                        overflow: hidden;
-                        font-size: 0.8em;
-                    }
-                    .calendar-header, .calendar-week {
-                        display: grid;
-                        grid-template-columns: repeat(7, 1fr);
-                        border-bottom: 1px solid #e0e0e0;
-                    }
-                    .calendar-header .day-header {
-                        text-align: center;
-                        padding: 10px 0;
-                        font-weight: bold;
-                    }
-                    .calendar-day {
-                        border-right: 1px solid #e0e0e0;
-                        padding: 5px;
-                        min-height: 100px; /* Adjust as needed */
-                        position: relative;
-                    }
-                     .calendar-day:last-child {
-                        border-right: none;
-                    }
-                    .day-number {
-                        font-size: 1.2em;
-                        font-weight: bold;
-                        text-align: right;
-                        margin-bottom: 5px;
-                    }
-                     .day-number.today {
-                        color: blue; /* Highlight today */
-                    }
-                    .day-content {
-                        /* Flex or grid could be used here for better alignment */
-                    }
-                    .schedule-block {
-                        padding: 3px;
-                        margin-bottom: 3px;
-                        border-radius: 3px;
-                        color: white; /* Adjust text color for readability */
-                        overflow: hidden; /* Hide overflowing text */
-                         text-overflow: ellipsis;
-                         white-space: nowrap;
-                    }
-                     .schedule-block small {
-                         font-size: 0.7em;
-                     }
-                </style>
-
-                {{-- Existing Table View --}}
+        {{-- Detail Table View --}}
+        <div class="card mt-4">
+            <div class="card-body">
                 <h5>Detail Jadwal Produksi</h5>
                 @if($groupedSchedules->isEmpty())
                     <p>Tidak ada detail jadwal produksi saat ini.</p>
@@ -167,7 +53,7 @@
                                     <tbody>
                                         @foreach($poSchedules as $schedule)
                                             <tr>
-                                                <td>{{ $schedule->catatan ?? 'N/A' }}</td> {{-- Using 'catatan' for stage name --}}
+                                                <td>{{ $schedule->catatan ?? 'N/A' }}</td>
                                                 <td>{{ $schedule->nama_mesin }}</td>
                                                 <td>{{ date('d/m/Y', strtotime($schedule->tanggal_mulai)) }}</td>
                                                 <td>{{ date('d/m/Y', strtotime($schedule->tanggal_selesai)) }}</td>
@@ -186,7 +72,7 @@
                                                     @endphp
                                                     <span class="{{ $statusClass }}">{{ $schedule->status }}</span>
                                                 </td>
-                                                <td>{{ $schedule->catatan }}</td> {{-- Displaying original catatan as well --}}
+                                                <td>{{ $schedule->catatan }}</td>
                                                 <td>
                                                     <form action="{{ route('pabrik.scheduler.updateStatus', $schedule->id_jadwal) }}" method="POST">
                                                         @csrf
@@ -219,4 +105,41 @@
             </div>
         </div>
     </div>
+
+    @push('styles')
+    <style>
+        #calendar {
+            margin: 20px 0; /* Tambahkan margin atas dan bawah */
+        }
+
+        .fc-event {
+            padding: 2px 5px; /* Tambahkan padding di dalam event */
+            border-radius: 3px; /* Sudut membulat */
+            font-size: 0.85em; /* Ukuran font sedikit lebih kecil */
+            color: white !important; /* Pastikan teks berwarna putih */
+            border: none !important; /* Hapus border default jika ada */
+        }
+
+        .fc-event-title {
+            font-weight: bold; /* Judul event lebih tebal */
+            display: block; /* Pastikan judul mengambil baris baru jika perlu */
+        }
+
+        .fc-event-time {
+            font-size: 0.8em; /* Ukuran font waktu lebih kecil */
+            opacity: 0.9; /* Sedikit transparan */
+            display: block; /* Pastikan waktu mengambil baris baru jika perlu */
+        }
+
+        /* Memastikan warna latar belakang event diterapkan */
+        .fc-event.fc-event-start.fc-event-end {
+             /* Aturan ini membantu menarget event harian */
+             /* Latar belakang diatur melalui JavaScript, tapi ini bisa membantu */
+        }
+
+        /* Contoh styling berdasarkan warna jika diperlukan, tapi saat ini warna dari JS */
+        /* .fc-event[style*="background-color: #C0392B"] { } */
+
+    </style>
+    @endpush
 @endsection 
