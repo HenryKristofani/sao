@@ -4,7 +4,7 @@
     @include('layouts.SidebarPabrik')
 
     <div class="content p-4" style="margin-top: 60px;">
-        <h4 class="fw-bold mb-4">Jadwal Produksi</h4>
+        <h4 class="fw-bold mb-4">Jadwal Produksi Keren</h4>
 
         @if(session('success'))
             <div class="alert alert-success">
