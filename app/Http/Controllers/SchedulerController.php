@@ -9,8 +9,34 @@ use Illuminate\Support\Facades\DB;
 
 class SchedulerController extends Controller
 {
+    public function autoUpdateScheduleStatus()
+    {
+        $today = date('Y-m-d');
+        $schedules = DB::table('jadwal_produksi')->orderBy('tanggal_mulai')->get();
+
+        foreach ($schedules as $schedule) {
+            $mulai = substr($schedule->tanggal_mulai, 0, 10);
+            $selesai = substr($schedule->tanggal_selesai, 0, 10);
+            if ($today < $mulai) {
+                $newStatus = 'dijadwalkan';
+            } elseif ($today >= $mulai && $today <= $selesai) {
+                $newStatus = 'berlangsung';
+            } elseif ($today > $selesai) {
+                $newStatus = 'selesai';
+            } else {
+                $newStatus = $schedule->status;
+            }
+            if ($schedule->status !== $newStatus) {
+                DB::table('jadwal_produksi')
+                    ->where('id_jadwal', $schedule->id_jadwal)
+                    ->update(['status' => $newStatus]);
+            }
+        }
+    }
+
     public function index()
     {
+        $this->autoUpdateScheduleStatus();
         // Fetch schedule data directly from jadwal_produksi, joining with penjualan to get PO details
         $schedules = DB::table('jadwal_produksi')
             ->join('penjualan', 'jadwal_produksi.id_penjualan', '=', 'penjualan.id_penjualan')
