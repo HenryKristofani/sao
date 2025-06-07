@@ -64,7 +64,7 @@
                     </div>
 
                     <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="perlu_pabrikasi" name="perlu_pabrikasi">
+                        <input type="checkbox" class="form-check-input" id="perlu_pabrikasi" name="perlu_pabrikasi" value="1">
                         <label class="form-check-label" for="perlu_pabrikasi">Perlu Pabrikasi?</label>
                         <small id="pabrikasi_warning" class="form-text text-danger" style="display: none;">Menambahkan proses pabrikasi akan memperpanjang waktu produksi hingga 5 hari</small>
                     </div>

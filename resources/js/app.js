@@ -21,6 +21,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var events = [];
 
+        function addOneDay(dateTimeStr) {
+            var dateStr = dateTimeStr.split(' ')[0];
+            var parts = dateStr.split('-');
+            var dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+            dateObj.setDate(dateObj.getDate() + 1);
+            var month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+            var day = dateObj.getDate().toString().padStart(2, '0');
+            return dateObj.getFullYear() + '-' + month + '-' + day;
+        }
+
         // Convert grouped schedules to FullCalendar events format
         for (var poId in groupedSchedules) {
             if (groupedSchedules.hasOwnProperty(poId)) {
@@ -41,12 +51,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
 
+                    // Calculate end date (+1 day for FullCalendar exclusivity)
+                    var endDateStr = addOneDay(schedule.tanggal_selesai);
+
                     events.push({
                         title: 'PO ' + poId + ' - ' + schedule.catatan,
-                        start: schedule.tanggal_mulai,
-                        // end: schedule.tanggal_selesai, // FullCalendar end is exclusive, often needs adjustment
-                        // Let's use the end date as is for now, may need adjustment later
-                        end: schedule.tanggal_selesai,
+                        start: schedule.tanggal_mulai.split(' ')[0],
+                        end: endDateStr,
+                        allDay: true,
                         backgroundColor: color,
                         borderColor: 'transparent',
                         textColor: '#fff',

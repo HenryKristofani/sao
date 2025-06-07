@@ -72,6 +72,7 @@ class PabrikController extends Controller
             'items' => 'required|array|min:1',
             'items.*.item_id' => 'required|exists:item,id_item',
             'items.*.quantity' => 'required|numeric|min:1',
+            'perlu_pabrikasi' => 'nullable|boolean'
         ]);
 
         // Begin transaction
@@ -96,6 +97,7 @@ class PabrikController extends Controller
             $draftPenjualan->tanggal_penjualan = date('Y-m-d');
             $draftPenjualan->total_harga_penjualan = $totalPrice;
             $draftPenjualan->id_karyawan = $request->employee_id;
+            $draftPenjualan->perlu_pabrikasi = $request->boolean('perlu_pabrikasi');
             $draftPenjualan->save();
 
             // Simpan detail penjualan untuk setiap item
@@ -111,6 +113,7 @@ class PabrikController extends Controller
                 $draftDetailPenjualan->jumlah_jual = $quantity;
                 $draftDetailPenjualan->harga_jual_satuan = $price;
                 $draftDetailPenjualan->subtotal_harga = $subtotal;
+                $draftDetailPenjualan->perlu_pabrikasi = $request->boolean('perlu_pabrikasi');
                 $draftDetailPenjualan->save();
             }
 
@@ -405,54 +408,90 @@ class PabrikController extends Controller
         }
     }
 
-    /**
-     * Generate production schedules for an approved PO
-     * 
-     * @param int $poId The PO ID
-     * @param Collection $detailItems The PO detail items
-     */
+    private function addWorkingDays($date, $days, $holidays = [])
+    {
+        $current = strtotime($date);
+        $added = 0;
+        while ($added < $days) {
+            $current = strtotime('+1 day', $current);
+            $dayOfWeek = date('N', $current); // 6=Saturday, 7=Sunday
+            $currentDateStr = date('Y-m-d', $current);
+            if ($dayOfWeek < 6 && !in_array($currentDateStr, $holidays)) {
+                $added++;
+            }
+        }
+        return date('Y-m-d', $current);
+    }
+
     private function generateProductionSchedules($poId, $detailItems)
     {
         try {
-            // Get the PO details
             $po = Penjualan::findOrFail($poId);
-            
-            // Calculate start date (tomorrow)
             $startDate = date('Y-m-d', strtotime('+1 day'));
-            
-            // Define production stages and their durations
-            $stages = [
-                [
-                    'name' => 'Pembelian Bahan',
-                    'duration' => 2, // 2 days
-                    'machine' => 'N/A',
-                    'priority' => 'Tinggi'
-                ],
-                [
-                    'name' => 'Produksi',
-                    'duration' => 3, // 3 days
-                    'machine' => 'Mesin Produksi 1',
-                    'priority' => 'Tinggi'
-                ],
-                [
-                    'name' => 'Packing',
-                    'duration' => 1, // 1 day
-                    'machine' => 'Mesin Packing',
-                    'priority' => 'Sedang'
-                ],
-                [
-                    'name' => 'Pengiriman',
-                    'duration' => 1, // 1 day
-                    'machine' => 'N/A',
-                    'priority' => 'Tinggi'
-                ]
+            $stages = [];
+            $perluPabrikasi = $detailItems->first()->perlu_pabrikasi ?? false;
+
+            // Daftar tanggal merah (contoh, bisa diambil dari DB atau config)
+            $holidays = [
+                // '2025-06-17', // contoh tanggal merah
+                // Tambahkan tanggal merah lain di sini
             ];
+
+            if ($perluPabrikasi) {
+                $stages = [
+                    [
+                        'name' => 'Pembelian Bahan',
+                        'duration' => 2,
+                        'machine' => 'N/A',
+                        'priority' => 'Tinggi'
+                    ],
+                    [
+                        'name' => 'Produksi',
+                        'duration' => 5, // 5 hari
+                        'machine' => 'Mesin Produksi 1',
+                        'priority' => 'Tinggi'
+                    ],
+                    [
+                        'name' => 'Packing',
+                        'duration' => 1,
+                        'machine' => 'Mesin Packing',
+                        'priority' => 'Sedang'
+                    ],
+                    [
+                        'name' => 'Pengiriman',
+                        'duration' => 3,
+                        'machine' => 'N/A',
+                        'priority' => 'Tinggi'
+                    ]
+                ];
+            } else {
+                $stages = [
+                    [
+                        'name' => 'Pembelian Bahan',
+                        'duration' => 2,
+                        'machine' => 'N/A',
+                        'priority' => 'Tinggi'
+                    ],
+                    [
+                        'name' => 'Packing',
+                        'duration' => 1,
+                        'machine' => 'Mesin Packing',
+                        'priority' => 'Sedang'
+                    ],
+                    [
+                        'name' => 'Pengiriman',
+                        'duration' => 3,
+                        'machine' => 'N/A',
+                        'priority' => 'Tinggi'
+                    ]
+                ];
+            }
 
             $currentDate = $startDate;
 
-            // Create schedules for each stage
             foreach ($stages as $stage) {
-                $endDate = date('Y-m-d', strtotime($currentDate . ' + ' . ($stage['duration'] - 1) . ' days'));
+                // Hitung tanggal selesai dengan skip sabtu, minggu, dan tanggal merah
+                $endDate = $this->addWorkingDays($currentDate, $stage['duration'] - 1, $holidays);
 
                 DB::table('jadwal_produksi')->insert([
                     'id_penjualan' => $poId,
@@ -465,8 +504,8 @@ class PabrikController extends Controller
                     'status' => 'dijadwalkan'
                 ]);
 
-                // Move to next stage's start date
-                $currentDate = date('Y-m-d', strtotime($endDate . ' + 1 day'));
+                // Tanggal mulai tahap berikutnya = endDate + 1 hari kerja
+                $currentDate = $this->addWorkingDays($endDate, 1, $holidays);
             }
 
             return true;

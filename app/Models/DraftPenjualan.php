@@ -14,7 +14,8 @@ class DraftPenjualan extends Model
         'id_pelanggan',
         'tanggal_penjualan',
         'total_harga_penjualan',
-        'id_karyawan'
+        'id_karyawan',
+        'perlu_pabrikasi'
     ];
     
     public function detailPenjualan()
