@@ -7,6 +7,8 @@ import interactionPlugin from '@fullcalendar/interaction'; // for clickable even
 
 // Import Bootstrap CSS and JS (for tooltips)
 import 'bootstrap/dist/css/bootstrap.min.css';
+import * as bootstrap from 'bootstrap';
+window.bootstrap = bootstrap;
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 // import $ from 'jquery'; // Assuming jQuery is available for Bootstrap tooltips
 

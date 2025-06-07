@@ -108,6 +108,7 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/pabrik/scheduler', [SchedulerController::class, 'index'])->name('pabrik.scheduler');
     Route::post('/pabrik/scheduler/{id}/update-status', [SchedulerController::class, 'updateStatus'])->name('pabrik.scheduler.updateStatus');
+    Route::post('/pabrik/scheduler/{id}/update', [SchedulerController::class, 'update'])->name('pabrik.scheduler.update');
 });
 
 // Rute Items Pabrik

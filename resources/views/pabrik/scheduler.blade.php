@@ -74,7 +74,7 @@
                                                 </td>
                                                 <td>{{ $schedule->catatan }}</td>
                                                 <td>
-                                                    <form action="{{ route('pabrik.scheduler.updateStatus', $schedule->id_jadwal) }}" method="POST">
+                                                    <form action="{{ route('pabrik.scheduler.updateStatus', $schedule->id_jadwal) }}" method="POST" style="display:inline-block;">
                                                         @csrf
                                                         <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
                                                             <option value="dijadwalkan" {{ $schedule->status == 'dijadwalkan' ? 'selected' : '' }}>Dijadwalkan</option>
@@ -83,6 +83,16 @@
                                                             <option value="ditunda" {{ $schedule->status == 'ditunda' ? 'selected' : '' }}>Ditunda</option>
                                                         </select>
                                                     </form>
+                                                    <button type="button" class="btn btn-sm btn-primary mt-1 edit-schedule-btn" 
+                                                        data-id="{{ $schedule->id_jadwal }}"
+                                                        data-mulai="{{ $schedule->tanggal_mulai }}"
+                                                        data-selesai="{{ $schedule->tanggal_selesai }}"
+                                                        data-mesin="{{ $schedule->nama_mesin }}"
+                                                        data-durasi="{{ $schedule->estimasi_durasi }}"
+                                                        data-prioritas="{{ $schedule->prioritas }}"
+                                                        data-catatan="{{ $schedule->catatan }}">
+                                                        Edit
+                                                    </button>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -105,6 +115,55 @@
                 @endif
             </div>
         </div>
+    </div>
+
+    {{-- Modal Edit Scheduler --}}
+    <div class="modal fade" id="editScheduleModal" tabindex="-1" aria-labelledby="editScheduleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form id="editScheduleForm">
+            <div class="modal-header">
+              <h5 class="modal-title" id="editScheduleModalLabel">Edit Jadwal Produksi</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" name="id_jadwal" id="edit-id-jadwal">
+              <div class="mb-3">
+                <label for="edit-tanggal-mulai" class="form-label">Tanggal Mulai</label>
+                <input type="date" class="form-control" name="tanggal_mulai" id="edit-tanggal-mulai" required>
+              </div>
+              <div class="mb-3">
+                <label for="edit-tanggal-selesai" class="form-label">Tanggal Selesai</label>
+                <input type="date" class="form-control" name="tanggal_selesai" id="edit-tanggal-selesai" required>
+              </div>
+              <div class="mb-3">
+                <label for="edit-nama-mesin" class="form-label">Nama Mesin</label>
+                <input type="text" class="form-control" name="nama_mesin" id="edit-nama-mesin">
+              </div>
+              <div class="mb-3">
+                <label for="edit-durasi" class="form-label">Estimasi Durasi (Hari)</label>
+                <input type="number" class="form-control" name="estimasi_durasi" id="edit-durasi" min="1" required>
+              </div>
+              <div class="mb-3">
+                <label for="edit-prioritas" class="form-label">Prioritas</label>
+                <select class="form-select" name="prioritas" id="edit-prioritas">
+                  <option value="tinggi">Tinggi</option>
+                  <option value="sedang">Sedang</option>
+                  <option value="rendah">Rendah</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="edit-catatan" class="form-label">Catatan</label>
+                <input type="text" class="form-control" name="catatan" id="edit-catatan">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
 
     @push('styles')
@@ -295,5 +354,49 @@
             min-width: 120px;
         }
     </style>
+    @endpush
+
+    @push('scripts')
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Open modal and fill data
+        document.querySelectorAll('.edit-schedule-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.getElementById('edit-id-jadwal').value = this.dataset.id;
+                document.getElementById('edit-tanggal-mulai').value = this.dataset.mulai.split(' ')[0];
+                document.getElementById('edit-tanggal-selesai').value = this.dataset.selesai.split(' ')[0];
+                document.getElementById('edit-nama-mesin').value = this.dataset.mesin;
+                document.getElementById('edit-durasi').value = this.dataset.durasi;
+                document.getElementById('edit-prioritas').value = this.dataset.prioritas;
+                document.getElementById('edit-catatan').value = this.dataset.catatan;
+                var modal = new bootstrap.Modal(document.getElementById('editScheduleModal'));
+                modal.show();
+            });
+        });
+
+        // Handle form submit
+        document.getElementById('editScheduleForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var id = document.getElementById('edit-id-jadwal').value;
+            var formData = new FormData(this);
+            fetch('/pabrik/scheduler/' + id + '/update', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Gagal update jadwal: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(() => alert('Gagal update jadwal.'));
+        });
+    });
+    </script>
     @endpush
 @endsection 
