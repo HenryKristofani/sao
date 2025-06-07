@@ -11,7 +11,7 @@ class Penjualan extends Model
 
     protected $table = 'penjualan';
     protected $primaryKey = 'id_penjualan';
-    public $timestamps = true;
+    public $timestamps = false;
     
     protected $fillable = [
         'id_pelanggan',

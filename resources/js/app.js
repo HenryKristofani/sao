@@ -70,29 +70,74 @@ document.addEventListener('DOMContentLoaded', function() {
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
-            locale: 'id', // Set locale to Indonesian
+            locale: 'id',
             events: events,
+            height: 'auto',
+            contentHeight: 600,
+            aspectRatio: 1.8,
+            expandRows: true,
+            stickyHeaderDates: true,
+            dayMaxEvents: true,
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            },
+            eventDisplay: 'block',
             eventClick: function(info) {
-                // Tampilkan detail event dalam alert (bisa diganti modal)
-                alert(
-                    'PO: ' + info.event.title + '\n' +
-                    'Status: ' + info.event.extendedProps.status + '\n' +
-                    'Mesin: ' + info.event.extendedProps.machine + '\n' +
-                    'Durasi: ' + info.event.extendedProps.duration + ' hari\n' +
-                    'Prioritas: ' + info.event.extendedProps.priority
-                );
+                // Create a custom modal instead of using alert
+                const modal = document.createElement('div');
+                modal.className = 'event-modal';
+                modal.innerHTML = `
+                    <div class="event-modal-content">
+                        <div class="event-modal-header">
+                            <h5>${info.event.title}</h5>
+                            <button class="close-modal">&times;</button>
+                        </div>
+                        <div class="event-modal-body">
+                            <p><strong>Status:</strong> ${info.event.extendedProps.status}</p>
+                            <p><strong>Mesin:</strong> ${info.event.extendedProps.machine}</p>
+                            <p><strong>Durasi:</strong> ${info.event.extendedProps.duration} hari</p>
+                            <p><strong>Prioritas:</strong> ${info.event.extendedProps.priority}</p>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                // Add event listener to close modal
+                modal.querySelector('.close-modal').addEventListener('click', () => {
+                    modal.remove();
+                });
+                
+                // Close modal when clicking outside
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
             },
             eventDidMount: function(info) {
-                // Tambahkan tooltip (membutuhkan jQuery dan Bootstrap Tooltip) - Removed jQuery dependency
-                 // $(info.el).tooltip({
-                 //     title: info.event.title,
-                 //     placement: 'top',
-                 //     trigger: 'hover',
-                 //     container: 'body'
-                 // });
-
-                 // You might need to initialize Bootstrap tooltips differently without jQuery
-                 // Or use a different tooltip library
+                // Add custom tooltip
+                const tooltip = document.createElement('div');
+                tooltip.className = 'custom-tooltip';
+                tooltip.innerHTML = `
+                    <div class="tooltip-content">
+                        <strong>${info.event.title}</strong>
+                        <p>Status: ${info.event.extendedProps.status}</p>
+                        <p>Mesin: ${info.event.extendedProps.machine}</p>
+                    </div>
+                `;
+                
+                info.el.addEventListener('mouseenter', () => {
+                    document.body.appendChild(tooltip);
+                    const rect = info.el.getBoundingClientRect();
+                    tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
+                    tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+                });
+                
+                info.el.addEventListener('mouseleave', () => {
+                    tooltip.remove();
+                });
             }
         });
 

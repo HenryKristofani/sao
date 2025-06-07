@@ -393,12 +393,85 @@ class PabrikController extends Controller
             DraftDetailPenjualan::where('id_penjualan', $id)->delete();
             $draftPenjualan->delete();
 
+            // Auto-generate production schedules
+            $this->generateProductionSchedules($penjualan->id_penjualan, $detailItems);
+
             DB::commit();
 
             return redirect()->route('pabrik.po-jual')->with('success', 'PO Penjualan berhasil diapprove!');
         } catch (\Exception $e) {
             DB::rollback();
             return back()->with('error', 'Terjadi kesalahan saat approve: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Generate production schedules for an approved PO
+     * 
+     * @param int $poId The PO ID
+     * @param Collection $detailItems The PO detail items
+     */
+    private function generateProductionSchedules($poId, $detailItems)
+    {
+        try {
+            // Get the PO details
+            $po = Penjualan::findOrFail($poId);
+            
+            // Calculate start date (tomorrow)
+            $startDate = date('Y-m-d', strtotime('+1 day'));
+            
+            // Define production stages and their durations
+            $stages = [
+                [
+                    'name' => 'Pembelian Bahan',
+                    'duration' => 2, // 2 days
+                    'machine' => 'N/A',
+                    'priority' => 'Tinggi'
+                ],
+                [
+                    'name' => 'Produksi',
+                    'duration' => 3, // 3 days
+                    'machine' => 'Mesin Produksi 1',
+                    'priority' => 'Tinggi'
+                ],
+                [
+                    'name' => 'Packing',
+                    'duration' => 1, // 1 day
+                    'machine' => 'Mesin Packing',
+                    'priority' => 'Sedang'
+                ],
+                [
+                    'name' => 'Pengiriman',
+                    'duration' => 1, // 1 day
+                    'machine' => 'N/A',
+                    'priority' => 'Tinggi'
+                ]
+            ];
+
+            $currentDate = $startDate;
+
+            // Create schedules for each stage
+            foreach ($stages as $stage) {
+                $endDate = date('Y-m-d', strtotime($currentDate . ' + ' . ($stage['duration'] - 1) . ' days'));
+
+                DB::table('jadwal_produksi')->insert([
+                    'id_penjualan' => $poId,
+                    'catatan' => $stage['name'],
+                    'nama_mesin' => $stage['machine'],
+                    'tanggal_mulai' => $currentDate,
+                    'tanggal_selesai' => $endDate,
+                    'estimasi_durasi' => $stage['duration'],
+                    'prioritas' => $stage['priority'],
+                    'status' => 'dijadwalkan'
+                ]);
+
+                // Move to next stage's start date
+                $currentDate = date('Y-m-d', strtotime($endDate . ' + 1 day'));
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            throw new \Exception('Error generating production schedules: ' . $e->getMessage());
         }
     }
 
