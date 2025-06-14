@@ -3,7 +3,7 @@
 @section('content')
     @include('layouts.pabrik-navbar')
 
-    <div class="content p-4" style="margin-top: 60px;">
+    <div class="content p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h5 class="card-title">Daftar PO Penjualan</h5>
             <a href="{{ route('pabrik.po-jual.create') }}" class="btn btn-primary">
