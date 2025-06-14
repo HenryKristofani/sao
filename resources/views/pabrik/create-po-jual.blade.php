@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    @include('layouts.SidebarPabrik')
+    @include('layouts.pabrik-navbar')
 
     <div class="content p-4" style="margin-top: 60px;">
         <h4 class="fw-bold mb-4">Buat PO Jual</h4>

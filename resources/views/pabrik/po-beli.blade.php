@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-@include('layouts.SidebarPabrik')
+@include('layouts.pabrik-navbar')
 <div class="content p-4" style="margin-top: 60px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h5 class="card-title">Daftar PO Pembelian</h5>

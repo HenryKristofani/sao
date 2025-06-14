@@ -3,6 +3,10 @@
         background-color: #2a2a2a; /* Dark background for the body */
     }
 
+    .navbar * {
+        color: #fff !important;
+    }
+
     .navbar {
         position: fixed;
         top: 0;
@@ -29,7 +33,7 @@
     .navbar-brand-left {
         display: flex;
         align-items: center;
-        color: white;
+        color: #fff !important; /* Pastikan warna putih */
         font-weight: bold;
         font-size: 24px;
     }
@@ -45,19 +49,21 @@
 
     .navbar-links-center {
         flex-grow: 1; /* Allows this section to take up available space */
-        display: flex;
+        display: flex !important;
         justify-content: center; /* Centers the content (ul.navbar-nav) within this section */
         align-items: center;
+        width: auto !important;
     }
 
     .navbar-nav {
-        display: flex;
-        flex-flow: row nowrap; /* Combined flex-direction and flex-wrap */
+        display: flex !important;
+        flex-direction: row !important; /* Pastikan horizontal */
         align-items: center; /* Align items vertically in the center */
         list-style: none;
         margin: 0;
         padding: 0;
         gap: 25px; /* Increased gap for better spacing */
+        width: auto !important;
     }
 
     .nav-item {
@@ -71,19 +77,21 @@
         align-items: center;
         padding: 8px 15px;
         text-decoration: none;
-        color: white; /* White text for links */
+        color: #fff !important; /* Pastikan warna putih */
         border-radius: 4px;
         transition: all 0.3s ease;
         font-size: 16px;
+        font-weight: 500; /* Tambah ketebalan agar lebih jelas */
     }
 
     .nav-link:hover {
         background-color: rgba(255, 255, 255, 0.1); /* Subtle hover effect */
+        color: #fff !important;
     }
 
     .nav-link.active {
         background-color: rgba(0, 123, 255, 0.3); /* Slightly transparent blue for active link */
-        color: white;
+        color: #fff !important;
     }
 
     .nav-icon {
@@ -100,7 +108,7 @@
         align-items: center;
         padding: 10px 20px; /* Larger padding for button */
         text-decoration: none;
-        color: white; /* White text for button */
+        color: #fff !important; /* White text for button */
         border-radius: 5px; /* Rounded corners for button */
         transition: all 0.3s ease;
         background-color: #007bff; /* Blue background for button */
@@ -111,7 +119,7 @@
 
     .logout-btn:hover {
         background-color: #0056b3; /* Darker blue on hover */
-        color: white;
+        color: #fff !important;
     }
 
     .content {
@@ -180,4 +188,4 @@
             </form>
         </div>
     </div>
-</nav> 
+</nav>

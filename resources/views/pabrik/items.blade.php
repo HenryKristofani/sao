@@ -2,7 +2,7 @@
 
 @section('content')
 <!-- Include Sidebar -->
-@include('layouts.SidebarPabrik')
+@include('layouts.pabrik-navbar')
 
 <div class="content" style="margin-top: 60px;">
     <div class="container">
